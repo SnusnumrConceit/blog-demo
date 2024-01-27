@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Enums\Category\PrivacyEnum;
 use App\Observers\CategoryObserver;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -46,5 +48,35 @@ class Category extends Model
     public function getDislpayNameAttribute(): string
     {
         return ucfirst($this->name);
+    }
+
+    /**
+     * Выборка по публичным категориям
+     *
+     * @return Builder
+     */
+    public function scopePublic(): Builder
+    {
+        return $this->whereNull('privacy');
+    }
+
+    /**
+     * Выборка по защищённым категориям
+     *
+     * @return Builder
+     */
+    public function scopeProtected(): Builder
+    {
+        return $this->where('privacy', PrivacyEnum::PROTECTED);
+    }
+
+    /**
+     * Выборка по скрытым категориям
+     *
+     * @return Builder
+     */
+    public function scopePrivate(): Builder
+    {
+        return $this->where('privacy', PrivacyEnum::PRIVATE);
     }
 }
