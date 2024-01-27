@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
+ * @property-read int $id
  * @property string $slug
  * @property string $name
  * @property ?string $privacy
@@ -20,7 +21,10 @@ class Category extends Model
 
     protected static function boot()
     {
+        parent::boot();
+
         static::observe(CategoryObserver::class);
+
     }
 
     protected $fillable = [
@@ -33,4 +37,14 @@ class Category extends Model
         'created_at',
         'updated_at',
     ];
+
+    /**
+     * Название категории для отображения
+     *
+     * @return string
+     */
+    public function getDislpayNameAttribute(): string
+    {
+        return ucfirst($this->name);
+    }
 }
