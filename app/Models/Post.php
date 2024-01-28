@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\Post\PrivacyEnum;
 use App\Observers\PostObserver;
+use App\Services\CensorService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Ramsey\Collection\Collection;
@@ -22,6 +23,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property ?Carbon $published_at
  * @property Carbon $created_at
  * @property Carbon $updated_at
+ *
+ * @property-read string $censored_content
  *
  * @property Collection<PostView> $views
  */
@@ -129,5 +132,15 @@ class Post extends Model
     public function scopePrivate(): Builder
     {
         return $this->where('privacy', PrivacyEnum::PRIVATE);
+    }
+
+    /**
+     * Контент, прошедший цензуру
+     *
+     * @return string
+     */
+    public function getCensoredContentAttribute(): string
+    {
+        return CensorService::censor($this->content);
     }
 }
