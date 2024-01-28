@@ -105,6 +105,5 @@ it('can not update category with another similar category', function () {
     /** @var TestResponse $response */
     $response = $this->actingAs($user)->put(route('admin.categories.update', ['category' => $category->id]), $payload);
 
-    dump($response->exception);
     $this->assertInstanceOf(ValidationException::class, $response->exception);
 });
