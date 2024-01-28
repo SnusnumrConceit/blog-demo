@@ -1,15 +1,22 @@
 <?php
 
+use App\Enums\Post\PrivacyEnum;
+use App\Jobs\Admin\Post\PublishPost;
 use App\Models\Post;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+
+beforeEach(function () {
+    Carbon::setTestNow(now());
+});
 
 it('cannot store post', function () {
     $payload = Post::factory()->simple()->make()->toArray();
@@ -55,7 +62,7 @@ it('can active user store post', function () {
         'slug' => Str::slug(title: $payload['title'], language: 'ru'),
         'content' => $payload['content'],
         'privacy' => $payload['privacy'],
-        'published_at' => null,
+        'published_at' => Carbon::getTestNow(),
         'author_id' => $user->id,
     ]);
 });
@@ -77,7 +84,7 @@ it('can admin user store post', function () {
         'slug' => Str::slug(title: $payload['title'], language: 'ru'),
         'content' => $payload['content'],
         'privacy' => $payload['privacy'],
-        'published_at' => null,
+        'published_at' => Carbon::getTestNow(),
         'author_id' => null,
     ]);
 });
@@ -121,4 +128,37 @@ it('cannot store post with duplicated slug post', function () {
 
     $this->assertInstanceOf(ValidationException::class, $response->exception);
     $response->assertStatus(Response::HTTP_FOUND);
+});
+
+it('can store category with delayed published_at date', function () {
+    $user = User::factory()->active()->create();
+
+    $payload = Post::factory()->planned(Carbon::getTestNow()->addHour())->make()->toArray();
+    Arr::forget($payload, ['slug']);
+
+    Queue::fake();
+
+    /** @var TestResponse $response */
+    $response = $this->actingAs($user)
+        ->post(route('admin.posts.store'), $payload);
+
+    $response->assertStatus(Response::HTTP_CREATED);
+
+    $this->assertDatabaseHas('posts', [
+        'title' => $payload['title'],
+        'slug' => Str::slug(title: $payload['title'], language: 'ru'),
+        'content' => $payload['content'],
+        'privacy' => PrivacyEnum::PRIVATE,
+        'published_at' => $payload['published_at'],
+        'author_id' => $user->id,
+    ]);
+
+    /** @var Post $post */
+    $post = Post::where('slug', Str::slug(title: $payload['title'], language: 'ru'))->first();
+
+    Queue::assertPushed(fn (PublishPost $job) =>
+        $job->postId === $post->id
+        && $job->privacy === $payload['privacy']
+        && $job->delay === Carbon::parse($post->published_at)->diffInSeconds(Carbon::getTestNow())
+    );
 });

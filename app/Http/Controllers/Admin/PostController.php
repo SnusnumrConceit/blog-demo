@@ -6,6 +6,7 @@ use App\Enums\Post\PrivacyEnum;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Post\StorePostRequest;
 use App\Http\Requests\Admin\Post\UpdatePostRequest;
+use App\Jobs\Admin\Post\PublishPost;
 use App\Models\Post;
 use Illuminate\Http\JsonResponse;
 
@@ -48,6 +49,11 @@ class PostController extends Controller
             ...$request->validated(),
             'author_id' => auth()->user()->hasRole('admin') ? null : auth()->id(),
         ]);
+
+       if ($post->published_at) {
+           dispatch(new PublishPost(postId: $post->id, privacy: $request->privacy))
+               ->delay(now()->diffInSeconds($post->published_at));
+       }
 
         return response()->json(
             data: ['post' => $post],
