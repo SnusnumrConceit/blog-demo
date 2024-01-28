@@ -53,4 +53,23 @@ class PostPolicy
 
         return $user->hasRole(StatusEnum::ACTIVE) && $user->id === $post->author_id;
     }
+
+    /**
+     * Разрешение на просмотр поста на сайте
+     *
+     * @param User|null $user
+     * @param Post $post
+     *
+     * @return bool
+     */
+    public function sitePostShow(?User $user, Post $post): bool
+    {
+        if(! $user) return $post->isPublic();
+
+        if ($user->hasRole(StatusEnum::ADMIN)) return true;
+
+        if ($post->isPrivate()) return false;
+
+        return $user->hasRole(StatusEnum::ACTIVE);
+    }
 }

@@ -57,6 +57,37 @@ class Post extends Model
     }
 
     /**
+     * Доступен всем
+     *
+     * @return bool
+     */
+    public function isPublic(): bool
+    {
+        return is_null($this->privacy);
+    }
+
+
+    /**
+     * Доступен активным
+     *
+     * @return bool
+     */
+    public function isProtected(): bool
+    {
+        return $this->privacy === PrivacyEnum::PROTECTED;
+    }
+
+    /**
+     * Скрыт от всех
+     *
+     * @return bool
+     */
+    public function isPrivate(): bool
+    {
+        return $this->privacy === PrivacyEnum::PRIVATE;
+    }
+
+    /**
      * Выборка по публичным категориям
      *
      * @return Builder
