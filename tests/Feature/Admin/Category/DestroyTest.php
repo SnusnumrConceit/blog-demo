@@ -6,7 +6,6 @@ use App\Models\Category;
 use App\Models\User;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\Response;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -14,8 +13,6 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 it('cannot delete category', function () {
     /** @var Category $category */
     $category = Category::factory()->create();
-    $payload = Category::factory()->make()->toArray();
-    Arr::forget($payload, ['slug']);
 
     $users = [
         null,
@@ -27,8 +24,8 @@ it('cannot delete category', function () {
     foreach ($users as $user) {
         /** @var TestResponse $response */
         $response = is_null($user)
-            ? $this->delete(route('admin.categories.destroy', ['category' => $category->id]), $payload)
-            : $this->actingAs($user)->delete(route('admin.categories.destroy', ['category' => $category->id]), $payload);
+            ? $this->delete(route('admin.categories.destroy', ['category' => $category->id]))
+            : $this->actingAs($user)->delete(route('admin.categories.destroy', ['category' => $category->id]));
 
         if (! $user) {
             $this->assertInstanceOf(AuthenticationException::class, $response->exception);
