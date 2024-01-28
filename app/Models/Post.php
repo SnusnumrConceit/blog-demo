@@ -6,8 +6,10 @@ use App\Enums\Post\PrivacyEnum;
 use App\Observers\PostObserver;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Ramsey\Collection\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
@@ -20,6 +22,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property ?Carbon $published_at
  * @property Carbon $created_at
  * @property Carbon $updated_at
+ *
+ * @property Collection<PostView> $views
  */
 class Post extends Model
 {
@@ -54,6 +58,16 @@ class Post extends Model
     public function author(): HasOne
     {
         return $this->hasOne(related: User::class, foreignKey: 'id', localKey: 'author_id');
+    }
+
+    /**
+     * Просмотры постов
+     *
+     * @return HasMany
+     */
+    public function views(): HasMany
+    {
+        return $this->hasMany(related: PostView::class, foreignKey: 'post_id', localKey: 'id');
     }
 
     /**

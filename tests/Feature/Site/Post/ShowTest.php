@@ -2,10 +2,13 @@
 
 namespace Tests\Feature\Site\Post;
 
+use App\Enums\Post\PrivacyEnum;
 use App\Models\Post;
+use App\Models\PostView;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Response;
+use Illuminate\Support\Arr;
 use Illuminate\Testing\TestResponse;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -26,6 +29,21 @@ it('can view post only in Russia', function () {
     $this->assertInstanceOf(HttpException::class, $response->exception);
     $this->assertEquals('Sorry, but your locale is not compatible.', $response->exception->getMessage());
     $this->assertEquals(Response::HTTP_FORBIDDEN, $response->getStatusCode());
+});
+
+it('can guest view public post', function () {
+    /** @var Post $post */
+    $post = Post::factory()->public()->create();
+
+    $locale = 'ru';
+    /** @var TestResponse $response */
+    $response = $this->withHeaders(['Accept-Language' => $locale])
+        ->get(route('site.posts.show', ['post' => $post->slug]));
+
+    $response->assertSuccessful();
+
+    /** проверяем, что счётчик просмотров не изменился */
+    $this->assertFalse($post->views()->exists());
 });
 
 it('cannot guest view protected post', function () {
@@ -76,4 +94,49 @@ it('can admin view private post', function () {
         ->get(route('site.posts.show', ['post' => $post->slug]));
 
     $response->assertSuccessful();
+
+    /** проверяем, что счётчик просмотров не изменился */
+    $this->assertFalse($post->views()->exists());
+});
+
+it('can active user view protected or public post', function () {
+    $user = User::factory()->active()->create();
+    /** @var Post $post */
+    $post = Post::factory()->create([
+        'privacy' => Arr::random([null, PrivacyEnum::PROTECTED])
+    ]);
+
+    $locale = 'ru';
+    /** @var TestResponse $response */
+    $response = $this->actingAs($user)
+        ->withHeaders(['Accept-Language' => $locale])
+        ->get(route('site.posts.show', ['post' => $post->slug]));
+
+    $response->assertSuccessful();
+
+    /** проверяем счётчик просмотров */
+    $this->assertEquals(1, $post->views()->count());
+});
+
+it('cannot increment view when post has been viewed earlier', function () {
+    $user = User::factory()->active()->create();
+    /** @var Post $post */
+    $post = Post::factory()->create([
+        'privacy' => Arr::random([null, PrivacyEnum::PROTECTED])
+    ]);
+    PostView::factory()
+        ->user($user->id)
+        ->post($post->id)
+        ->create();
+
+    $locale = 'ru';
+    /** @var TestResponse $response */
+    $response = $this->actingAs($user)
+        ->withHeaders(['Accept-Language' => $locale])
+        ->get(route('site.posts.show', ['post' => $post->slug]));
+
+    $response->assertSuccessful();
+
+    /** проверяем, что счётчик просмотров не изменился */
+    $this->assertEquals(1, $post->views()->count());
 });
