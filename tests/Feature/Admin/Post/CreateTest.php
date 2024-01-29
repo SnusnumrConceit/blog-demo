@@ -3,9 +3,11 @@
 namespace Tests\Feature\Admin\Post;
 
 use App\Enums\Post\PrivacyEnum;
+use App\Models\Category;
 use App\Models\Post;
 use App\Models\User;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
 use Illuminate\Testing\TestResponse;
@@ -39,21 +41,27 @@ it('cannot create post', function () {
 });
 
 it('can admin create post', function () {
+    $categoryIds = Category::factory()->count(10)->create()->pluck('name', 'id')->all();
     $user = User::factory()->admin()->create();
 
     /** @var TestResponse $response */
     $response = $this->actingAs($user)->get(route('admin.posts.create'));
 
     $response->assertSuccessful();
-    $response->assertContent(json_encode(['privacyItems' => PrivacyEnum::getValues()]));
+    $response->assertExactJson((['privacyItems' => PrivacyEnum::getValues(), 'categories' => $categoryIds]));
 });
 
 it('can active user create post', function () {
+    /** @var Category<Collection> $categories */
+    $categories = Category::factory()->count(10)->create();
     $user = User::factory()->active()->create();
 
     /** @var TestResponse $response */
     $response = $this->actingAs($user)->get(route('admin.posts.create'));
 
     $response->assertSuccessful();
-    $response->assertContent(json_encode(['privacyItems' => PrivacyEnum::getValues()]));
+    $response->assertExactJson([
+        'privacyItems' => PrivacyEnum::getValues(),
+        'categories' => $categories->whereIn('privacy', [PrivacyEnum::PROTECTED, null])->pluck('name', 'id')->all()
+    ]);
 });

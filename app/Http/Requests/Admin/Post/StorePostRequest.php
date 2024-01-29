@@ -5,7 +5,9 @@ namespace App\Http\Requests\Admin\Post;
 use App\Enums\Post\PrivacyEnum;
 use App\Http\Requests\BaseRequest;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Exists;
 
 
 class StorePostRequest extends BaseRequest
@@ -14,6 +16,7 @@ class StorePostRequest extends BaseRequest
     {
         $input = $this->request->all();
         $input['title'] = $this->prepareTitleForValidation($input['title']);
+        $input['categories'] = $this->prepareCategoriesForValidation($input['categories'] ?? []);
 
         $this->merge($input);
     }
@@ -32,6 +35,25 @@ class StorePostRequest extends BaseRequest
             default => null,
         };
     }
+
+    /**
+     * Предварительная подготовка категорий
+     *
+     * @param mixed $categories
+     *
+     * @return array|null
+     */
+    protected function prepareCategoriesForValidation(mixed $categories): ?array
+    {
+        if (! is_array($categories)) return null;
+
+        return array_values(
+            array_unique(
+                array_filter($categories, fn (mixed $categoryId) => is_numeric($categoryId) && $categoryId > 0)
+            )
+        );
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *
@@ -53,6 +75,21 @@ class StorePostRequest extends BaseRequest
                 Rule::in(PrivacyEnum::getValues())
             ],
             'published_at' => 'nullable|date|after:' . now()->toDayDateTimeString(),
+            'categories' => [
+                'bail',
+                'required',
+                'array',
+                'min:1',
+                Rule::exists(table: 'categories', column: 'id')
+                    ->when(
+                        value: ! auth()->user()->isAdmin(),
+                        callback: fn (Exists $rule) => $rule->where(
+                            fn (Builder $query) => $query->whereNull('privacy')
+                                ->orWhere('privacy', PrivacyEnum::PROTECTED)
+                        ),
+                    )
+            ],
+            'categories.*' => 'required|numeric|min:1'
         ];
     }
 
@@ -76,6 +113,7 @@ class StorePostRequest extends BaseRequest
             'content' => 'Контент',
             'privacy' => 'Приватность',
             'published_at' => 'Отложенная дата публикации',
+            'categories' => 'Категории',
         ];
     }
 }

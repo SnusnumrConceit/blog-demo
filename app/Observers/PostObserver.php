@@ -33,4 +33,14 @@ class PostObserver
 
         $post->published_at ??= now();
     }
+
+    /**
+     * @param Post $post
+     *
+     * @return void
+     */
+    public function deleting(Post $post): void
+    {
+        $post->categories()->detach();
+    }
 }

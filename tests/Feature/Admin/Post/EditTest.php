@@ -3,10 +3,12 @@
 namespace Tests\Feature\Admin\Post;
 
 use App\Enums\Post\PrivacyEnum;
+use App\Models\Category;
 use App\Models\Post;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
 use Illuminate\Testing\TestResponse;
@@ -42,6 +44,8 @@ it('cannot edit post', function () {
 });
 
 it('can admin edit post', function () {
+    /** @var Collection<Category> $categories */
+    $categories = Category::factory()->count(3)->create();
     $user = User::factory()->admin()->create();
 
     /** @var Post $post */
@@ -51,26 +55,32 @@ it('can admin edit post', function () {
     $response = $this->actingAs($user)->get(route('admin.posts.edit', ['post' => $post->id]));
 
     $response->assertSuccessful();
-    $response->assertContent(json_encode([
+    $response->assertJson([
         'privacyItems' => PrivacyEnum::getValues(),
         'post' => $post->toArray(),
-    ]));
+        'categories' => $categories->pluck('name', 'id')->all()
+    ]);
 });
 
 it('can author edit post', function () {
+    /** @var Collection<Category> $categories */
+    $categories = Category::factory()->count(5)->create();
     $user = User::factory()->active()->create();
 
     /** @var Post $post */
     $post = Post::factory()->authoredBy($user->id)->create();
+    $postCategoriesIds = $categories->random(2)->pluck('id')->all();
+    $post->categories()->sync($postCategoriesIds);
 
     /** @var TestResponse $response */
     $response = $this->actingAs($user)->get(route('admin.posts.edit', ['post' => $post->id]));
 
     $response->assertSuccessful();
-    $response->assertContent(json_encode([
+    $response->assertJson([
         'privacyItems' => PrivacyEnum::getValues(),
         'post' => $post->toArray(),
-    ]));
+        'categories' => $categories->whereNotIn('privacy', [PrivacyEnum::PRIVATE])->pluck('name', 'id')->all(),
+    ]);
 });
 
 it('cannot active user edit another author post', function () {

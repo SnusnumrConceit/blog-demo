@@ -54,8 +54,18 @@ class User extends Authenticatable
      */
     public function hasRole(string $role): bool
     {
-        if ($this->status === StatusEnum::ADMIN) return true;
+        if ($this->isAdmin()) return true;
 
         return $this->status === $role;
+    }
+
+    /**
+     * Признак админа
+     *
+     * @return bool
+     */
+    public function isAdmin(): bool
+    {
+        return $this->status === StatusEnum::ADMIN;
     }
 }

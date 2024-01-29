@@ -29,6 +29,18 @@ class CategoryFactory extends Factory
     }
 
     /**
+     * Публичная
+     *
+     * @return $this
+     */
+    public function public(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'privacy' => null,
+        ]);
+    }
+
+    /**
      * Скрыта от гостей
      *
      * @return $this

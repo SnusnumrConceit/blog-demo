@@ -7,7 +7,8 @@ use App\Observers\PostObserver;
 use App\Services\CensorService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
-use Ramsey\Collection\Collection;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -26,7 +27,9 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  *
  * @property-read string $censored_content
  *
+ * @property ?User $author
  * @property Collection<PostView> $views
+ * @property \Illuminate\Database\Eloquent\Collection<Category> $categories
  */
 class Post extends Model
 {
@@ -61,6 +64,21 @@ class Post extends Model
     public function author(): HasOne
     {
         return $this->hasOne(related: User::class, foreignKey: 'id', localKey: 'author_id');
+    }
+
+    /**
+     * Категории
+     *
+     * @return BelongsToMany
+     */
+    public function categories(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            related: Category::class,
+            table: 'categories_posts',
+            foreignPivotKey: 'post_id',
+            relatedPivotKey: 'category_id'
+        );
     }
 
     /**

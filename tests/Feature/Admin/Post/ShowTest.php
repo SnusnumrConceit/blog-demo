@@ -50,9 +50,9 @@ it('can admin show post', function () {
     $response = $this->actingAs($user)->get(route('admin.posts.show', ['post' => $post->id]));
 
     $response->assertSuccessful();
-    $response->assertContent(json_encode([
+    $response->assertJson([
         'post' => $post->toArray(),
-    ]));
+    ]);
 });
 
 it('can author show post', function () {
@@ -65,9 +65,9 @@ it('can author show post', function () {
     $response = $this->actingAs($user)->get(route('admin.posts.show', ['post' => $post->id]));
 
     $response->assertSuccessful();
-    $response->assertContent(json_encode([
+    $response->assertJson([
         'post' => $post->toArray(),
-    ]));
+    ]);
 });
 
 it('cannot active user show another author post', function () {

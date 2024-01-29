@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\Post\PrivacyEnum;
+use App\Enums\User\StatusEnum;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Post\StorePostRequest;
 use App\Http\Requests\Admin\Post\UpdatePostRequest;
 use App\Jobs\Admin\Post\PublishPost;
+use App\Models\Category;
 use App\Models\Post;
 use Illuminate\Http\JsonResponse;
 
@@ -35,8 +37,13 @@ class PostController extends Controller
      */
     public function create(): JsonResponse
     {
+        $categories = auth()->user()->hasRole(StatusEnum::ADMIN)
+            ? Category::all()
+            : Category::whereNull('privacy')->orWhere('privacy', PrivacyEnum::PROTECTED)->get();
+
         return response()->json([
             'privacyItems' => PrivacyEnum::getValues(),
+            'categories' => $categories->pluck('name', 'id')->all(),
         ]);
     }
 
@@ -55,6 +62,8 @@ class PostController extends Controller
                ->delay(now()->diffInSeconds($post->published_at));
        }
 
+       $post->categories()->sync($request->categories);
+
         return response()->json(
             data: ['post' => $post],
             status: JsonResponse::HTTP_CREATED
@@ -66,6 +75,8 @@ class PostController extends Controller
      */
     public function show(Post $post): JsonResponse
     {
+        $post->load('categories:id,name');
+
         return response()->json(['post' => $post]);
     }
 
@@ -74,8 +85,15 @@ class PostController extends Controller
      */
     public function edit(Post $post): JsonResponse
     {
+        $post->load('categories:id,name');
+
+        $categories = auth()->user()->hasRole(StatusEnum::ADMIN)
+            ? Category::all()
+            : Category::whereNull('privacy')->orWhere('privacy', PrivacyEnum::PROTECTED)->get();
+
         return response()->json([
             'privacyItems' => PrivacyEnum::getValues(),
+            'categories' => $categories->merge($post->categories)->pluck('name', 'id')->all(),
             'post' => $post,
         ]);
     }
@@ -86,6 +104,8 @@ class PostController extends Controller
     public function update(UpdatePostRequest $request, Post $post): JsonResponse
     {
         $post->update($request->validated());
+
+        $post->categories()->sync($request->categories);
 
         return response()->json(data: [], status: JsonResponse::HTTP_NO_CONTENT);
     }

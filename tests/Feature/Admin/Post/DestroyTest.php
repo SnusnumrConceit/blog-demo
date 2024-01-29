@@ -2,11 +2,15 @@
 
 namespace Tests\Feature\Admin\Post;
 
+use App\Enums\Post\PrivacyEnum;
+use App\Models\Category;
 use App\Models\Post;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\Response;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -39,10 +43,17 @@ it('cannot delete post', function () {
 });
 
 it('can admin delete post', function () {
+    /** @var array<int> $categoriesIds */
+    $categoriesIds = Category::factory()
+        ->count(3)
+        ->create(['privacy' => Arr::random([null, PrivacyEnum::getRandomValue()])])
+        ->pluck('id')
+        ->all();
     $user = User::factory()->admin()->create();
 
     /** @var Post $post */
     $post = Post::factory()->create();
+    $post->categories()->sync($categoriesIds);
 
     /** @var TestResponse $response */
     $response = $this->actingAs($user)->delete(route('admin.posts.destroy', ['post' => $post->id]));
@@ -57,13 +68,24 @@ it('can admin delete post', function () {
         'author_id' => $post->author_id,
         'content' => $post->content,
     ]);
+
+    $this->assertFalse(DB::table('categories_posts')->where('post_id', $post->id)->exists());
 });
 
 it('can author delete post', function () {
+    /** @var array<int> $categoriesIds */
+    $categoriesIds = Category::factory()
+        ->public()
+        ->count(3)
+        ->create()
+        ->pluck('id')
+        ->all();
+
     $user = User::factory()->active()->create();
 
     /** @var Post $post */
     $post = Post::factory()->authoredBy($user->id)->create();
+    $post->categories()->sync($categoriesIds);
 
     /** @var TestResponse $response */
     $response = $this->actingAs($user)->delete(route('admin.posts.destroy', ['post' => $post->id]));
@@ -78,6 +100,8 @@ it('can author delete post', function () {
         'author_id' => $post->author_id,
         'content' => $post->content,
     ]);
+
+    $this->assertFalse(DB::table('categories_posts')->where('post_id', $post->id)->exists());
 });
 
 it('cannot active user delete another author post', function () {
