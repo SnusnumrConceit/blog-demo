@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Collection;
  * @property-read string $display_name
  *
  * @property Collection<Post> $posts
+ * @property Collection<Post> $publicPosts
  */
 class Category extends Model
 {
@@ -109,5 +110,35 @@ class Category extends Model
     public function scopePrivate(): Builder
     {
         return $this->where('privacy', PrivacyEnum::PRIVATE);
+    }
+
+    /**
+     * Публичная
+     *
+     * @return bool
+     */
+    public function isPublic(): bool
+    {
+        return is_null($this->privacy);
+    }
+
+    /**
+     * Скрыта от гостей
+     *
+     * @return bool
+     */
+    public function isProtected(): bool
+    {
+        return $this->privacy === PrivacyEnum::PROTECTED;
+    }
+
+    /**
+     * Приватная
+     *
+     * @return bool
+     */
+    public function isPrivate(): bool
+    {
+        return $this->privacy === PrivacyEnum::PRIVATE;
     }
 }
