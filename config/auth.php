@@ -112,4 +112,9 @@ return [
 
     'password_timeout' => 10800,
 
+    'tokens' => [
+        'bearer' => [
+            'public' => env('PUBLIC_API_TOKEN'),
+        ]
+    ]
 ];

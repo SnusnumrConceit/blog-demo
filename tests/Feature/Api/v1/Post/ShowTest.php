@@ -2,13 +2,25 @@
 
 namespace Tests\Feature\Api\Post;
 
-use App\Models\Category;
 use App\Models\Post;
 use Database\Factories\PostFactory;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Testing\TestResponse;
+use Illuminate\Foundation\Testing\TestCase;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+
+it('cannot show post without bearer token', function () {
+    /** @var Post $post */
+    $post = Post::factory()->public()->create();
+
+    /** @var TestCase $this */
+    $response = $this->getJson(route('api.v1.posts.show', ['post' => $post->slug]));
+
+    $this->assertInstanceOf(HttpException::class, $response->exception);
+    $this->assertEquals('Вы не авторизованы', $response->exception->getMessage());
+    $response->assertStatus(JsonResponse::HTTP_UNAUTHORIZED);
+});
 
 it('cannot show protected or private post', function () {
     /** @var Post $post */
@@ -18,8 +30,9 @@ it('cannot show protected or private post', function () {
         default: fn (PostFactory $factory) => $factory->private(),
     )->create();
 
-    /** @var TestResponse $response */
-    $response = $this->getJson(route('api.v1.posts.show', ['post' => $post->slug]));
+    /** @var TestCase $this */
+    $response = $this->withToken(config('auth.tokens.bearer.public'))
+        ->getJson(route('api.v1.posts.show', ['post' => $post->slug]));
 
     $this->assertInstanceOf(AuthorizationException::class, $response->exception);
     $response->assertJson(['message' => '']);
@@ -29,8 +42,9 @@ it('cannot show protected or private post', function () {
 it('cannot post be found by id', function () {
     $post = Post::factory()->public()->create();
 
-    /** @var TestResponse $response */
-    $response = $this->getJson(route('api.v1.posts.show', ['post' => $post->id]));
+    /** @var TestCase $this */
+    $response = $this->withToken(config('auth.tokens.bearer.public'))
+        ->getJson(route('api.v1.posts.show', ['post' => $post->id]));
 
     $this->assertInstanceOf(ModelNotFoundException::class, $response->exception);
     $response->assertJson(['message' => '']);
@@ -41,8 +55,9 @@ it('can get public post', function () {
     /** @var Post $post */
     $post = Post::factory()->public()->create();
 
-    /** @var TestResponse $response */
-    $response = $this->getJson(route('api.v1.posts.show', ['post' => $post->slug]));
+    /** @var TestCase $this */
+    $response = $this->withToken(config('auth.tokens.bearer.public'))
+        ->getJson(route('api.v1.posts.show', ['post' => $post->slug]));
 
     $response->assertSuccessful();
 

@@ -3,14 +3,26 @@
 namespace Tests\Feature\Api\Category;
 
 use App\Models\Category;
-use Illuminate\Testing\TestResponse;
+use Illuminate\Foundation\Testing\TestCase;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+
+it('cannot index categories without bearer token', function () {
+    /** @var TestCase $this */
+    $response = $this->getJson(route('api.v1.categories.index'));
+
+    $this->assertInstanceOf(HttpException::class, $response->exception);
+    $this->assertEquals('Вы не авторизованы', $response->exception->getMessage());
+    $response->assertStatus(JsonResponse::HTTP_UNAUTHORIZED);
+});
 
 it('Can index categories', function () {
     $categories = Category::factory()->count(20)->create();
     $publicCategoriesCount = $categories->whereNull('privacy')->count();
 
-    /** @var TestResponse $response */
-    $response = $this->getJson(route('api.v1.categories.index'));
+    /** @var TestCase $this */
+    $response = $this->withToken(config('auth.tokens.bearer.public'))
+        ->getJson(route('api.v1.categories.index'));
     $perPage = 15;
 
     $response->assertJson(
@@ -38,8 +50,9 @@ it('Can index categories from page#2', function () {
     $categories = Category::factory()->public()->count(20)->create();
     $perPage = 15;
 
-    /** @var TestResponse $response */
-    $response = $this->getJson(route('api.v1.categories.index', ['page' => 2]));
+    /** @var TestCase $this */
+    $response = $this->withToken(config('auth.tokens.bearer.public'))
+        ->getJson(route('api.v1.categories.index', ['page' => 2]));
 
     $response->assertJson(
         value: [

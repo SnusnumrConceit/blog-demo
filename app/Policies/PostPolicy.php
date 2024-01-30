@@ -13,14 +13,16 @@ class PostPolicy
      */
     public function viewAny(User $user): bool
     {
-        //
+        return true;
     }
 
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, Post $post): bool
+    public function view(?User $user, Post $post): bool
     {
+        if (request()->isJson()) return $post->isPublic();
+
         if ($user->hasRole(StatusEnum::ADMIN)) return true;
 
         return $user->hasRole(StatusEnum::ACTIVE) && $user->id === $post->author_id;

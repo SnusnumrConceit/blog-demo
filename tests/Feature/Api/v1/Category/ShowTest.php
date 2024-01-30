@@ -7,8 +7,21 @@ use App\Models\Post;
 use Database\Factories\CategoryFactory;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Testing\TestResponse;
+use Illuminate\Foundation\Testing\TestCase;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+
+it('cannot show category without bearer token', function () {
+    /** @var Category $category */
+    $category = Category::factory()->public()->create();
+
+    /** @var TestCase $this */
+    $response = $this->getJson(route('api.v1.categories.show', ['category' => $category->slug]));
+
+    $this->assertInstanceOf(HttpException::class, $response->exception);
+    $this->assertEquals('Вы не авторизованы', $response->exception->getMessage());
+    $response->assertStatus(JsonResponse::HTTP_UNAUTHORIZED);
+});
 
 it('cannot show protected or private category', function () {
     /** @var Category $category */
@@ -18,8 +31,9 @@ it('cannot show protected or private category', function () {
         default: fn (CategoryFactory $factory) => $factory->private(),
     )->create();
 
-    /** @var TestResponse $response */
-    $response = $this->getJson(route('api.v1.categories.show', ['category' => $category->slug]));
+    /** @var TestCase $this */
+    $response = $this->withToken(config('auth.tokens.bearer.public'))
+        ->getJson(route('api.v1.categories.show', ['category' => $category->slug]));
 
     $this->assertInstanceOf(AuthorizationException::class, $response->exception);
     $response->assertJson(['message' => '']);
@@ -29,8 +43,9 @@ it('cannot show protected or private category', function () {
 it('cannot category be found by id', function () {
     $category = Category::factory()->public()->create();
 
-    /** @var TestResponse $response */
-    $response = $this->getJson(route('api.v1.categories.show', ['category' => $category->id]));
+    /** @var TestCase $this */
+    $response = $this->withToken(config('auth.tokens.bearer.public'))
+        ->getJson(route('api.v1.categories.show', ['category' => $category->id]));
 
     $this->assertInstanceOf(ModelNotFoundException::class, $response->exception);
     $response->assertJson(['message' => '']);
@@ -45,8 +60,9 @@ it('can get public category', function () {
     $category->posts()->sync($posts->pluck('id')->all());
     $category->load('publicPosts:id,slug,title,published_at');
 
-    /** @var TestResponse $response */
-    $response = $this->getJson(route('api.v1.categories.show', ['category' => $category->slug]));
+    /** @var TestCase $this */
+    $response = $this->withToken(config('auth.tokens.bearer.public'))
+        ->getJson(route('api.v1.categories.show', ['category' => $category->slug]));
 
     $response->assertSuccessful();
 
@@ -62,8 +78,9 @@ it('can get public category without posts', function () {
     $category = Category::factory()->public()->create();
     $category->load('publicPosts:id,slug,title,published_at');
 
-    /** @var TestResponse $response */
-    $response = $this->getJson(route('api.v1.categories.show', ['category' => $category->slug]));
+    /** @var TestCase $this */
+    $response = $this->withToken(config('auth.tokens.bearer.public'))
+        ->getJson(route('api.v1.categories.show', ['category' => $category->slug]));
 
     $response->assertSuccessful();
 

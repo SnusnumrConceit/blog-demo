@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Http\Middleware\Api\v1\BearerAuth;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
 use Illuminate\Http\Request;
@@ -29,7 +30,7 @@ class RouteServiceProvider extends ServiceProvider
         });
 
         $this->routes(function () {
-            Route::middleware(['api', 'guest'])
+            Route::middleware(['api', BearerAuth::class])
                 ->prefix('api/v1')
                 ->as('api.v1.')
                 ->group(base_path('routes/api.php'));

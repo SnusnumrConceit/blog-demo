@@ -3,15 +3,27 @@
 namespace Tests\Feature\Api\v1\Post;
 
 use App\Models\Post;
-use Illuminate\Testing\TestResponse;
+use Illuminate\Foundation\Testing\TestCase;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+
+it('cannot show post without bearer token', function () {
+    /** @var TestCase $this */
+    $response = $this->getJson(route('api.v1.posts.index'));
+
+    $this->assertInstanceOf(HttpException::class, $response->exception);
+    $this->assertEquals('Вы не авторизованы', $response->exception->getMessage());
+    $response->assertStatus(JsonResponse::HTTP_UNAUTHORIZED);
+});
 
 it('Can index posts', function () {
     $posts = Post::factory()->count(20)->create();
     $publicCategoriesCount = $posts->whereNull('privacy')->count();
     $perPage = 15;
 
-    /** @var TestResponse $response */
-    $response = $this->getJson(route('api.v1.posts.index'));
+    /** @var TestCase $this */
+    $response = $this->withToken(config('auth.tokens.bearer.public'))
+        ->getJson(route('api.v1.posts.index'));
 
     $response->assertJson(
         value: [
@@ -38,8 +50,9 @@ it('Can index posts from page#2', function () {
     $posts = Post::factory()->public()->count(20)->create();
     $perPage = 15;
 
-    /** @var TestResponse $response */
-    $response = $this->getJson(route('api.v1.posts.index', ['page' => 2]));
+    /** @var TestCase $this */
+    $response = $this->withToken(config('auth.tokens.bearer.public'))
+        ->getJson(route('api.v1.posts.index', ['page' => 2]));
 
     $response->assertJson(
         value: [
