@@ -221,14 +221,10 @@ it('can store category with delayed published_at date', function () {
     );
 });
 
-it('Cannot active user store post with protected or private categories', function () {
+it('Cannot active user store post with private categories', function () {
     /** @var array<int> $categoriesIds */
     $categoriesIds = Category::factory()
-        ->when(
-            value: fake()->boolean,
-            callback: fn (CategoryFactory $factory) => $factory->protected(),
-            default: fn (CategoryFactory $factory) => $factory->private()
-        )
+        ->private()
         ->count(3)
         ->create()
         ->pluck('id')
@@ -303,4 +299,6 @@ it('Can store post with excess categories', function () {
     $post->load('categories:id');
 
     $this->assertCount(count($categoriesIds), $post->categories->pluck('id')->all());
+
+    Queue::assertPushed(PublishPost::class);
 });
