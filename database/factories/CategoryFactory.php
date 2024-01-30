@@ -48,7 +48,7 @@ class CategoryFactory extends Factory
     public function protected(): static
     {
         return $this->state(fn (array $attributes) => [
-            'privacy' => PrivacyEnum::PRIVATE
+            'privacy' => PrivacyEnum::PROTECTED
         ]);
     }
 
