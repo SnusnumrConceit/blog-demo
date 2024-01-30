@@ -81,7 +81,7 @@ it('can admin update post', function () {
         'slug' => Str::slug(title: $payload['title'], language: 'ru'),
         'content' => $payload['content'],
         'privacy' => $payload['privacy'],
-        'published_at' => null,
+        'published_at' => $post->published_at->format('Y-m-d H:i:s'),
         'author_id' => $post->author_id,
     ]);
 
@@ -123,7 +123,7 @@ it('can author update post', function () {
         'slug' => Str::slug(title: $payload['title'], language: 'ru'),
         'content' => $payload['content'],
         'privacy' => $payload['privacy'],
-        'published_at' => null,
+        'published_at' => $post->published_at->format('Y-m-d H:i:s'),
         'author_id' => $user->id,
     ]);
 
@@ -284,7 +284,7 @@ it('Can update post with excess categories', function () {
         'slug' => Str::slug(title: $payload['title'], language: 'ru'),
         'content' => $payload['content'],
         'privacy' => $payload['privacy'],
-        'published_at' => $payload['published_at'],
+        'published_at' => $post->published_at->format('Y-m-d H:i:s'),
         'author_id' => $user->isAdmin() ? $post->author_id : $user->id,
     ]);
 
