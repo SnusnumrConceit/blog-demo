@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\v1\CategoryController;
+use App\Http\Controllers\Api\v1\PostController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -21,3 +22,7 @@ use Illuminate\Support\Facades\Route;
 Route::apiResource('categories', CategoryController::class)
     ->only(['index', 'show'])
     ->scoped(['category' => 'slug']);
+
+Route::apiResource('posts', PostController::class)
+    ->only(['index', 'show'])
+    ->scoped(['post' => 'slug']);
