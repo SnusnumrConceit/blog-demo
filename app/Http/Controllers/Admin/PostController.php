@@ -31,7 +31,8 @@ class PostController extends Controller
      */
     public function index(): Factory|View
     {
-        $posts = Post::paginate(15, ['id', 'title', 'privacy', 'published_at', 'created_at', 'updated_at']);
+        $posts = Post::with('author:id,name')
+            ->paginate(15, ['id', 'title', 'privacy', 'published_at', 'created_at', 'updated_at']);
 
         return view(view: 'admin.posts.index', data: compact('posts'));
     }
@@ -48,7 +49,7 @@ class PostController extends Controller
             : Category::whereNull('privacy')->orWhere('privacy', PrivacyEnum::PROTECTED)->get();
 
         return view(view: 'admin.posts.create', data: [
-            'privacyItems' => PrivacyEnum::getValues(),
+            'privacyItems' => [null, ...PrivacyEnum::getValues()],
             'categories' => $categories->pluck('name', 'id')->all(),
         ]);
     }
@@ -101,7 +102,7 @@ class PostController extends Controller
             : Category::whereNull('privacy')->orWhere('privacy', PrivacyEnum::PROTECTED)->get();
 
         return view(view: 'admin.posts.edit', data: [
-            'privacyItems' => PrivacyEnum::getValues(),
+            'privacyItems' => [null, ...PrivacyEnum::getValues()],
             'categories' => $categories->merge($post->categories)->pluck('name', 'id')->all(),
             'post' => $post,
         ]);

@@ -51,7 +51,10 @@ it('can admin create post', function () {
 
     $response->assertSuccessful();
     $response->assertViewIs('admin.posts.create');
-    $response->assertViewHasAll((['privacyItems' => PrivacyEnum::getValues(), 'categories' => $categoryIds]));
+    $response->assertViewHasAll(([
+        'privacyItems' => [null, ...PrivacyEnum::getValues()],
+        'categories' => $categoryIds
+    ]));
 });
 
 it('can active user create post', function () {
@@ -67,7 +70,7 @@ it('can active user create post', function () {
     $response->assertSuccessful();
     $response->assertViewIs('admin.posts.create');
     $response->assertViewHasAll([
-        'privacyItems' => PrivacyEnum::getValues(),
+        'privacyItems' => [null, ...PrivacyEnum::getValues()],
         'categories' => $categories
             ->filter(fn (Category $category) => $category->privacy != PrivacyEnum::PRIVATE)
             ->pluck('name', 'id')->all()

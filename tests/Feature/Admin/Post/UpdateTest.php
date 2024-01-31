@@ -368,4 +368,4 @@ it('can send notification after updating post', function () {
 
     Mail::assertQueuedCount($recipientsCount === $recipientsChunkSize ? $recipientsDiv : $recipientsDiv + 1);
     Mail::assertQueued(PostUpdated::class);
-})->only()->repeat(3);
+});

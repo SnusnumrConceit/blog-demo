@@ -57,7 +57,7 @@ it('can admin edit post', function () {
     $response->assertSuccessful();
     $response->assertViewIs('admin.posts.edit');
     $response->assertViewHasAll([
-        'privacyItems' => PrivacyEnum::getValues(),
+        'privacyItems' => [null, ...PrivacyEnum::getValues()],
         'post' => $post,
         'categories' => $categories->pluck('name', 'id')->all()
     ]);
@@ -79,7 +79,7 @@ it('can author edit post', function () {
     $response->assertSuccessful();
     $response->assertViewIs('admin.posts.edit');
     $response->assertViewHasAll([
-        'privacyItems' => PrivacyEnum::getValues(),
+        'privacyItems' => [null, ...PrivacyEnum::getValues()],
         'post' => $post,
         'categories' => $categories->pluck('name', 'id')->all()
     ]);
