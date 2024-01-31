@@ -12,12 +12,12 @@ use Database\Factories\UserFactory;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Foundation\Testing\TestCase;
 use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
-use Illuminate\Testing\TestResponse;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 beforeEach(function () {
@@ -35,7 +35,7 @@ it('cannot delete post', function () {
     ];
 
     foreach ($users as $user) {
-        /** @var TestResponse $response */
+        /** @var TestCase $this */
         $response = is_null($user)
             ? $this->delete(route('admin.posts.destroy', ['post' => $post->id]))
             : $this->actingAs($user)->delete(route('admin.posts.destroy', ['post' => $post->id]));
@@ -58,18 +58,22 @@ it('can admin delete post', function () {
         ->create(['privacy' => Arr::random([null, PrivacyEnum::getRandomValue()])])
         ->pluck('id')
         ->all();
+
+    /** @var User $user */
     $user = User::factory()->admin()->create();
 
     /** @var Post $post */
     $post = Post::factory()->create();
     $post->categories()->sync($categoriesIds);
 
-    /** @var TestResponse $response */
-    $response = $this->actingAs($user)->delete(route('admin.posts.destroy', ['post' => $post->id]));
+    /** @var TestCase $this */
+    $response = $this->actingAs($user)
+        ->fromRoute('admin.posts.show', ['post' => $post->id])
+        ->delete(route('admin.posts.destroy', ['post' => $post->id]));
 
-    $response->assertSuccessful();
-    $response->assertStatus(Response::HTTP_NO_CONTENT);
-    $response->assertContent('');
+    $response->assertRedirectToRoute('admin.posts.index');
+    $response->assertSessionHas(key: 'success', value: 'Пост успешно удалён');
+
     $this->assertDatabaseMissing('posts', [
         'title' => $post->title,
         'slug' => Str::slug(title: $post->title, language: 'ru'),
@@ -92,18 +96,21 @@ it('can author delete post', function () {
         ->pluck('id')
         ->all();
 
+    /** @var User $user */
     $user = User::factory()->active()->create();
 
     /** @var Post $post */
     $post = Post::factory()->authoredBy($user->id)->create();
     $post->categories()->sync($categoriesIds);
 
-    /** @var TestResponse $response */
-    $response = $this->actingAs($user)->delete(route('admin.posts.destroy', ['post' => $post->id]));
+    /** @var TestCase $this */
+    $response = $this->actingAs($user)
+        ->fromRoute('admin.posts.show', ['post' => $post->id])
+        ->delete(route('admin.posts.destroy', ['post' => $post->id]));
 
-    $response->assertSuccessful();
-    $response->assertStatus(Response::HTTP_NO_CONTENT);
-    $response->assertContent('');
+    $response->assertRedirectToRoute('admin.posts.index');
+    $response->assertSessionHas(key: 'success', value: 'Пост успешно удалён');
+
     $this->assertDatabaseMissing('posts', [
         'title' => $post->title,
         'slug' => Str::slug(title: $post->title, language: 'ru'),
@@ -118,12 +125,13 @@ it('can author delete post', function () {
 });
 
 it('cannot active user delete another author post', function () {
+    /** @var User $user */
     $user = User::factory()->active()->create();
 
     /** @var Post $post */
     $post = Post::factory()->create();
 
-    /** @var TestResponse $response */
+    /** @var TestCase $this */
     $response = $this->actingAs($user)->get(route('admin.posts.destroy', ['post' => $post->id]));
 
     $this->assertInstanceOf(AuthorizationException::class, $response->exception);
@@ -157,12 +165,13 @@ it('can send notification after deleting post', function () {
         )->create();
     $post->categories()->sync($categoriesIds);
 
-    /** @var TestResponse $response */
-    $response = $this->actingAs($user)->delete(route('admin.posts.destroy', ['post' => $post->id]));
+    /** @var TestCase $this */
+    $response = $this->actingAs($user)
+        ->fromRoute('admin.posts.index')
+        ->delete(route('admin.posts.destroy', ['post' => $post->id]));
 
-    $response->assertSuccessful();
-    $response->assertStatus(Response::HTTP_NO_CONTENT);
-    $response->assertContent('');
+    $response->assertRedirectToRoute('admin.posts.index');
+    $response->assertSessionHas(key: 'success', value: 'Пост успешно удалён');
     $this->assertDatabaseMissing('posts', [
         'title' => $post->title,
         'slug' => Str::slug(title: $post->title, language: 'ru'),
@@ -173,6 +182,13 @@ it('can send notification after deleting post', function () {
 
     $this->assertFalse(DB::table('categories_posts')->where('post_id', $post->id)->exists());
 
+    $recipientsCount = $user->isAdmin() ? $recipients->count() + 1 : $recipients->count();
+    /* размер чанка */
+    $recipientsChunkSize = 20;
+    /* разница между размером чанка и кол-вом получателей */
+    $recipientsDiv = intdiv($recipientsCount, $recipientsChunkSize);
+
+    Mail::assertQueuedCount($recipientsCount === $recipientsChunkSize ? $recipientsDiv : $recipientsDiv + 1);
     Mail::assertQueuedCount(intdiv($recipients->count(), 20) + 1);
     Mail::assertQueued(PostDeleted::class);
 });

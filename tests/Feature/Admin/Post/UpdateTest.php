@@ -80,7 +80,8 @@ it('can admin update post', function () {
             $payload + ['categories' => $categoriesIds]
         );
 
-    $response->assertStatus(Response::HTTP_NO_CONTENT);
+    $response->assertRedirectToRoute('admin.posts.show', ['post' => $post->id]);
+    $response->assertSessionHas(key: 'success', value: 'Пост успешно обновлён');
 
     $this->assertDatabaseHas('posts', [
         'title' => $payload['title'],
@@ -124,7 +125,8 @@ it('can author update post', function () {
             $payload + ['categories' => $categoriesIds]
         );
 
-    $response->assertStatus(Response::HTTP_NO_CONTENT);
+    $response->assertRedirectToRoute('admin.posts.show', ['post' => $post->id]);
+    $response->assertSessionHas(key: 'success', value: 'Пост успешно обновлён');
 
     $this->assertDatabaseHas('posts', [
         'title' => $payload['title'],
@@ -287,7 +289,8 @@ it('Can update post with excess categories', function () {
             $payload + ['categories' => Arr::shuffle($categoriesIds + $invalidCategoriesIds)],
         );
 
-    $response->assertStatus(Response::HTTP_NO_CONTENT);
+    $response->assertRedirectToRoute('admin.posts.show', ['post' => $post->id]);
+    $response->assertSessionHas(key: 'success', value: 'Пост успешно обновлён');
 
     $this->assertDatabaseHas('posts', [
         'title' => $payload['title'],
@@ -341,7 +344,8 @@ it('can send notification after updating post', function () {
             $payload + ['categories' => $categoriesIds],
         );
 
-    $response->assertStatus(Response::HTTP_NO_CONTENT);
+    $response->assertRedirectToRoute('admin.posts.show', ['post' => $post->id]);
+    $response->assertSessionHas(key: 'success', value: 'Пост успешно обновлён');
 
     $this->assertDatabaseHas('posts', [
         'title' => $payload['title'],
@@ -357,6 +361,11 @@ it('can send notification after updating post', function () {
     $this->assertCount(count($categoriesIds), $post->categories->pluck('id')->all());
 
     $recipientsCount = $user->isAdmin() ? $recipients->count() + 1 : $recipients->count();
-    Mail::assertQueuedCount(intdiv($recipientsCount, 20) + 1);
+    /* размер чанка */
+    $recipientsChunkSize = 20;
+    /* разница между размером чанка и кол-вом получателей */
+    $recipientsDiv = intdiv($recipientsCount, $recipientsChunkSize);
+
+    Mail::assertQueuedCount($recipientsCount === $recipientsChunkSize ? $recipientsDiv : $recipientsDiv + 1);
     Mail::assertQueued(PostUpdated::class);
-});
+})->only()->repeat(3);

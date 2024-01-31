@@ -8,9 +8,9 @@ use App\Models\Post;
 use App\Models\User;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Foundation\Testing\TestCase;
 use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
-use Illuminate\Testing\TestResponse;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 it('cannot create post', function () {
@@ -24,7 +24,7 @@ it('cannot create post', function () {
     ];
 
     foreach ($users as $user) {
-        /** @var TestResponse $response */
+        /** @var TestCase $this */
         $response = is_null($user)
             ? $this->get(route('admin.posts.create'), $payload)
             : $this->actingAs($user)->get(route('admin.posts.create'), $payload);
@@ -44,11 +44,14 @@ it('can admin create post', function () {
     $categoryIds = Category::factory()->count(10)->create()->pluck('name', 'id')->all();
     $user = User::factory()->admin()->create();
 
-    /** @var TestResponse $response */
-    $response = $this->actingAs($user)->get(route('admin.posts.create'));
+    /** @var TestCase $this */
+    $response = $this->actingAs($user)
+        ->fromRoute('admin.posts.index')
+        ->get(route('admin.posts.create'));
 
     $response->assertSuccessful();
-    $response->assertExactJson((['privacyItems' => PrivacyEnum::getValues(), 'categories' => $categoryIds]));
+    $response->assertViewIs('admin.posts.create');
+    $response->assertViewHasAll((['privacyItems' => PrivacyEnum::getValues(), 'categories' => $categoryIds]));
 });
 
 it('can active user create post', function () {
@@ -56,12 +59,17 @@ it('can active user create post', function () {
     $categories = Category::factory()->count(10)->create();
     $user = User::factory()->active()->create();
 
-    /** @var TestResponse $response */
-    $response = $this->actingAs($user)->get(route('admin.posts.create'));
+    /** @var TestCase $this */
+    $response = $this->actingAs($user)
+        ->fromRoute('admin.posts.index')
+        ->get(route('admin.posts.create'));
 
     $response->assertSuccessful();
-    $response->assertExactJson([
+    $response->assertViewIs('admin.posts.create');
+    $response->assertViewHasAll([
         'privacyItems' => PrivacyEnum::getValues(),
-        'categories' => $categories->whereIn('privacy', [PrivacyEnum::PROTECTED, null])->pluck('name', 'id')->all()
+        'categories' => $categories
+            ->filter(fn (Category $category) => $category->privacy != PrivacyEnum::PRIVATE)
+            ->pluck('name', 'id')->all()
     ]);
 });

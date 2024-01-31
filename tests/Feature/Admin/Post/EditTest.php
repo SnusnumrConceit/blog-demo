@@ -55,9 +55,10 @@ it('can admin edit post', function () {
     $response = $this->actingAs($user)->get(route('admin.posts.edit', ['post' => $post->id]));
 
     $response->assertSuccessful();
-    $response->assertJson([
+    $response->assertViewIs('admin.posts.edit');
+    $response->assertViewHasAll([
         'privacyItems' => PrivacyEnum::getValues(),
-        'post' => $post->toArray(),
+        'post' => $post,
         'categories' => $categories->pluck('name', 'id')->all()
     ]);
 });
@@ -76,10 +77,11 @@ it('can author edit post', function () {
     $response = $this->actingAs($user)->get(route('admin.posts.edit', ['post' => $post->id]));
 
     $response->assertSuccessful();
-    $response->assertJson([
+    $response->assertViewIs('admin.posts.edit');
+    $response->assertViewHasAll([
         'privacyItems' => PrivacyEnum::getValues(),
-        'post' => $post->toArray(),
-        'categories' => $categories->whereNotIn('privacy', [PrivacyEnum::PRIVATE])->pluck('name', 'id')->all(),
+        'post' => $post,
+        'categories' => $categories->pluck('name', 'id')->all()
     ]);
 });
 

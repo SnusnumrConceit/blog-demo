@@ -10,12 +10,12 @@ use Carbon\Carbon;
 use Database\Factories\UserFactory;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Foundation\Testing\TestCase;
 use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
-use Illuminate\Testing\TestResponse;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
@@ -35,7 +35,7 @@ it('cannot store post', function () {
     ];
 
     foreach ($users as $user) {
-        /** @var TestResponse $response */
+        /** @var TestCase $this */
         $response = is_null($user)
             ? $this->post(route('admin.posts.store'), $payload)
             : $this->actingAs($user)->post(route('admin.posts.store'), $payload);
@@ -68,14 +68,18 @@ it('can active user store post', function () {
     /** @var Collection<User> $recipients */
     $recipients = User::factory()->active()->count(rand(5, 25))->create();
 
-    /** @var TestResponse $response */
+    /** @var TestCase $this */
     $response = $this->actingAs($user)
         ->post(
             route('admin.posts.store'),
             $payload + ['categories' => $categoriesIds]
         );
 
-    $response->assertStatus(Response::HTTP_CREATED);
+    /** @var Post $post */
+    $post = Post::where('slug', Str::slug(title: $payload['title'], language: 'ru'))->first();
+
+    $response->assertRedirectToRoute('admin.posts.show', ['post' => $post->id]);
+    $response->assertSessionHas(key: 'success', value: 'Пост успешно создан');
 
     $this->assertDatabaseHas('posts', [
         'title' => $payload['title'],
@@ -86,8 +90,6 @@ it('can active user store post', function () {
         'author_id' => $user->id,
     ]);
 
-    /** @var Post $post */
-    $post = Post::where('title', $payload['title'])->first();
     $post->load('categories:id');
 
     $this->assertCount(count($categoriesIds), $post->categories->pluck('id')->all());
@@ -114,14 +116,18 @@ it('can admin user store post', function () {
     /** @var Collection<User> $recipients */
     $recipients = User::factory()->active()->count(rand(5, 25))->create();
 
-    /** @var TestResponse $response */
+    /** @var TestCase $this */
     $response = $this->actingAs($user)
         ->post(
             route('admin.posts.store'),
             $payload + ['categories' => $categoriesIds]
         );
 
-    $response->assertStatus(Response::HTTP_CREATED);
+    /** @var Post $post */
+    $post = Post::where('slug', Str::slug(title: $payload['title'], language: 'ru'))->first();
+
+    $response->assertRedirectToRoute('admin.posts.show', ['post' => $post->id]);
+    $response->assertSessionHas(key: 'success', value: 'Пост успешно создан');
 
     $this->assertDatabaseHas('posts', [
         'title' => $payload['title'],
@@ -152,7 +158,7 @@ it('can not store category with invalid params', function () {
 
     foreach ($invalidParams as $param => $values) {
         foreach ($values as $value) {
-            /** @var TestResponse $response */
+            /** @var TestCase $this */
             $response = $this->actingAs($user)
                 ->post(route('admin.posts.store'), array_merge($payload, [$param => $value]));
 
@@ -178,7 +184,7 @@ it('cannot store post with duplicated slug post', function () {
     $payload = Post::factory()->simple()->make(['title' => mb_strtoupper($similarPost->title)])->toArray();
     Arr::forget($payload, ['slug', 'author_id']);
 
-    /** @var TestResponse $response */
+    /** @var TestCase $this */
     $response = $this->actingAs($user)
         ->post(
             route('admin.posts.store'),
@@ -206,14 +212,18 @@ it('can store category with delayed published_at date', function () {
     Queue::fake();
     Mail::fake();
 
-    /** @var TestResponse $response */
+    /** @var TestCase $this */
     $response = $this->actingAs($user)
         ->post(
             route('admin.posts.store'),
             $payload + ['categories' => $categoriesIds]
         );
 
-    $response->assertStatus(Response::HTTP_CREATED);
+    /** @var Post $post */
+    $post = Post::where('slug', Str::slug(title: $payload['title'], language: 'ru'))->first();
+
+    $response->assertRedirectToRoute('admin.posts.show', ['post' => $post->id]);
+    $response->assertSessionHas(key: 'success', value: 'Пост успешно создан');
 
     $this->assertDatabaseHas('posts', [
         'title' => $payload['title'],
@@ -224,8 +234,6 @@ it('can store category with delayed published_at date', function () {
         'author_id' => $user->id,
     ]);
 
-    /** @var Post $post */
-    $post = Post::where('slug', Str::slug(title: $payload['title'], language: 'ru'))->first();
     $post->load('categories:id');
 
     $this->assertCount(count($categoriesIds), $post->categories->pluck('id')->all());
@@ -253,7 +261,7 @@ it('Cannot active user store post with private categories', function () {
     $payload = Post::factory()->simple()->make()->toArray();
     Arr::forget($payload, ['slug']);
 
-    /** @var TestResponse $response */
+    /** @var TestCase $this */
     $response = $this->actingAs($user)
         ->post(
             route('admin.posts.store'),
@@ -298,14 +306,18 @@ it('Can store post with excess categories', function () {
     Queue::fake();
     Mail::fake();
 
-    /** @var TestResponse $response */
+    /** @var TestCase $this */
     $response = $this->actingAs($user)
         ->post(
             route('admin.posts.store'),
             $payload + ['categories' => Arr::shuffle($categoriesIds + $invalidCategoriesIds)],
         );
 
-    $response->assertStatus(Response::HTTP_CREATED);
+    /** @var Post $post */
+    $post = Post::where('slug', Str::slug(title: $payload['title'], language: 'ru'))->first();
+
+    $response->assertRedirectToRoute('admin.posts.show', ['post' => $post->id]);
+    $response->assertSessionHas(key: 'success', value: 'Пост успешно создан');
 
     $this->assertDatabaseHas('posts', [
         'title' => $payload['title'],
@@ -316,10 +328,7 @@ it('Can store post with excess categories', function () {
         'author_id' => $user->isAdmin() ? null : $user->id,
     ]);
 
-    /** @var Post $post */
-    $post = Post::where('slug', Str::slug(title: $payload['title'], language: 'ru'))->first();
     $post->load('categories:id');
-
     $this->assertCount(count($categoriesIds), $post->categories->pluck('id')->all());
 
     Queue::assertPushed(PublishPost::class);
