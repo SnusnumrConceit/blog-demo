@@ -3,17 +3,26 @@
 namespace Tests\Feature\Admin\Post;
 
 use App\Enums\Post\PrivacyEnum;
+use App\Mail\Post\PostDeleted;
 use App\Models\Category;
 use App\Models\Post;
 use App\Models\User;
+use Database\Factories\PostFactory;
+use Database\Factories\UserFactory;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+
+beforeEach(function () {
+    Mail::fake();
+});
 
 it('cannot delete post', function () {
     /** @var Post $post */
@@ -70,6 +79,8 @@ it('can admin delete post', function () {
     ]);
 
     $this->assertFalse(DB::table('categories_posts')->where('post_id', $post->id)->exists());
+
+    Mail::assertNothingSent();
 });
 
 it('can author delete post', function () {
@@ -102,6 +113,8 @@ it('can author delete post', function () {
     ]);
 
     $this->assertFalse(DB::table('categories_posts')->where('post_id', $post->id)->exists());
+
+    Mail::assertNothingSent();
 });
 
 it('cannot active user delete another author post', function () {
@@ -115,4 +128,51 @@ it('cannot active user delete another author post', function () {
 
     $this->assertInstanceOf(AuthorizationException::class, $response->exception);
     $this->assertEquals('This action is unauthorized.', $response->exception->getMessage());
+});
+
+it('can send notification after deleting post', function () {
+    /** @var Collection<User> $recipients */
+    $recipients = User::factory()->active()->count(rand(5, 25))->create();
+
+    /** @var array<int> $categoriesIds */
+    $categoriesIds = Category::factory()
+        ->count(3)
+        ->create(['privacy' => Arr::random([null, PrivacyEnum::getRandomValue()])])
+        ->pluck('id')
+        ->all();
+
+    /** @var User $user */
+    $user = User::factory()
+        ->when(
+            value: fake()->boolean,
+            callback: fn (UserFactory $factory) => $factory->admin(),
+            default: fn (UserFactory $factory) => $factory->active(),
+        )->create();
+
+    /** @var Post $post */
+    $post = Post::factory()
+        ->when(
+            value: ! $user->isAdmin(),
+            callback: fn (PostFactory $factory) => $factory->authoredBy($user->id)
+        )->create();
+    $post->categories()->sync($categoriesIds);
+
+    /** @var TestResponse $response */
+    $response = $this->actingAs($user)->delete(route('admin.posts.destroy', ['post' => $post->id]));
+
+    $response->assertSuccessful();
+    $response->assertStatus(Response::HTTP_NO_CONTENT);
+    $response->assertContent('');
+    $this->assertDatabaseMissing('posts', [
+        'title' => $post->title,
+        'slug' => Str::slug(title: $post->title, language: 'ru'),
+        'privacy' => $post->privacy,
+        'author_id' => $post->author_id,
+        'content' => $post->content,
+    ]);
+
+    $this->assertFalse(DB::table('categories_posts')->where('post_id', $post->id)->exists());
+
+    Mail::assertQueuedCount(intdiv($recipients->count(), 20) + 1);
+    Mail::assertQueued(PostDeleted::class);
 });

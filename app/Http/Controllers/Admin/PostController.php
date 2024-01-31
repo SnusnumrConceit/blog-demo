@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\Post\PrivacyEnum;
 use App\Enums\User\StatusEnum;
+use App\Events\Post\PostCreated;
+use App\Events\Post\PostDeleted;
+use App\Events\Post\PostUpdated;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Post\StorePostRequest;
 use App\Http\Requests\Admin\Post\UpdatePostRequest;
-use App\Jobs\Admin\Post\PublishPost;
 use App\Models\Category;
 use App\Models\Post;
 use Illuminate\Http\JsonResponse;
@@ -57,12 +59,9 @@ class PostController extends Controller
             'author_id' => auth()->user()->hasRole('admin') ? null : auth()->id(),
         ]);
 
-       if ($post->published_at) {
-           dispatch(new PublishPost(postId: $post->id, privacy: $request->privacy))
-               ->delay(now()->diffInSeconds($post->published_at));
-       }
-
        $post->categories()->sync($request->categories);
+
+       event(new PostCreated(post: $post, privacy: $request->privacy));
 
         return response()->json(
             data: ['post' => $post],
@@ -107,6 +106,8 @@ class PostController extends Controller
 
         $post->categories()->sync($request->categories);
 
+        event(new PostUpdated($post));
+
         return response()->json(data: [], status: JsonResponse::HTTP_NO_CONTENT);
     }
 
@@ -116,6 +117,8 @@ class PostController extends Controller
     public function destroy(Post $post): JsonResponse
     {
         $post->delete();
+
+        event(new PostDeleted($post));
 
         return response()->json(data: [], status: JsonResponse::HTTP_NO_CONTENT);
     }

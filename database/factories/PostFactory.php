@@ -29,7 +29,7 @@ class PostFactory extends Factory
             'slug' => Str::slug(title: $title, language: 'ru'),
             'privacy' => Arr::random([null, PrivacyEnum::getRandomValue()]),
             'content' => $this->faker->text(),
-            'author_id' => fn () => User::factory()->create()->id,
+            'author_id' => fn () => User::factory()->active()->create()->id,
             'published_at' => null,
         ];
     }

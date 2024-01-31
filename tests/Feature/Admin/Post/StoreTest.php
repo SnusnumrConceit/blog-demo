@@ -2,15 +2,17 @@
 
 use App\Enums\Post\PrivacyEnum;
 use App\Jobs\Admin\Post\PublishPost;
+use App\Mail\Post\PostCreated;
 use App\Models\Category;
 use App\Models\Post;
 use App\Models\User;
 use Carbon\Carbon;
-use Database\Factories\CategoryFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
@@ -19,6 +21,7 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 beforeEach(function () {
     Carbon::setTestNow(now());
+    Mail::fake();
 });
 
 it('cannot store post', function () {
@@ -62,6 +65,9 @@ it('can active user store post', function () {
     $payload = Post::factory()->simple()->make()->toArray();
     Arr::forget($payload, ['slug']);
 
+    /** @var Collection<User> $recipients */
+    $recipients = User::factory()->active()->count(rand(5, 25))->create();
+
     /** @var TestResponse $response */
     $response = $this->actingAs($user)
         ->post(
@@ -85,6 +91,9 @@ it('can active user store post', function () {
     $post->load('categories:id');
 
     $this->assertCount(count($categoriesIds), $post->categories->pluck('id')->all());
+
+    Mail::assertQueuedCount(intdiv($recipients->count(), 20) + 1);
+    Mail::assertQueued(PostCreated::class);
 });
 
 it('can admin user store post', function () {
@@ -101,6 +110,9 @@ it('can admin user store post', function () {
 
     $payload = Post::factory()->simple()->make()->toArray();
     Arr::forget($payload, ['slug']);
+
+    /** @var Collection<User> $recipients */
+    $recipients = User::factory()->active()->count(rand(5, 25))->create();
 
     /** @var TestResponse $response */
     $response = $this->actingAs($user)
@@ -119,6 +131,9 @@ it('can admin user store post', function () {
         'published_at' => Carbon::getTestNow(),
         'author_id' => null,
     ]);
+
+    Mail::assertQueuedCount(intdiv($recipients->count(), 20) + 1);
+    Mail::assertQueued(PostCreated::class);
 });
 
 it('can not store category with invalid params', function () {
@@ -189,6 +204,7 @@ it('can store category with delayed published_at date', function () {
     Arr::forget($payload, ['slug']);
 
     Queue::fake();
+    Mail::fake();
 
     /** @var TestResponse $response */
     $response = $this->actingAs($user)
@@ -219,6 +235,8 @@ it('can store category with delayed published_at date', function () {
         && $job->privacy === $payload['privacy']
         && $job->delay === Carbon::parse($post->published_at)->diffInSeconds(Carbon::getTestNow())
     );
+
+    Mail::assertNothingSent();
 });
 
 it('Cannot active user store post with private categories', function () {
@@ -274,7 +292,11 @@ it('Can store post with excess categories', function () {
     $payload = Post::factory()->planned(Carbon::getTestNow()->addHour())->make()->toArray();
     Arr::forget($payload, ['slug']);
 
+    /** @var Collection<User> $recipients */
+    $recipients = User::factory()->active()->count(rand(5, 25))->create();
+
     Queue::fake();
+    Mail::fake();
 
     /** @var TestResponse $response */
     $response = $this->actingAs($user)
@@ -301,4 +323,6 @@ it('Can store post with excess categories', function () {
     $this->assertCount(count($categoriesIds), $post->categories->pluck('id')->all());
 
     Queue::assertPushed(PublishPost::class);
+    Mail::assertQueuedCount(intdiv($recipients->count(), 20) + 1);
+    Mail::assertQueued(PostCreated::class);
 });

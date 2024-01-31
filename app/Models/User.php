@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\User\StatusEnum;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -88,5 +89,17 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->status === StatusEnum::ADMIN;
+    }
+
+    /**
+     * Выборка по активным пользователям
+     *
+     * @param Builder $query
+     *
+     * @return Builder
+     */
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('status', StatusEnum::ACTIVE);
     }
 }

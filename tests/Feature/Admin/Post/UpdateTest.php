@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin\Post;
 
+use App\Mail\Post\PostUpdated;
 use App\Models\Category;
 use App\Models\Post;
 use App\Models\User;
@@ -11,8 +12,10 @@ use Database\Factories\PostFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -20,6 +23,8 @@ use Tests\TestCase;
 
 beforeEach(function () {
     Carbon::setTestNow(now());
+
+    Mail::fake();
 });
 
 it('cannot update post', function () {
@@ -53,6 +58,7 @@ it('cannot update post', function () {
 });
 
 it('can admin update post', function () {
+    /** @var User $user */
     $user = User::factory()->admin()->create();
     /** @var Post $post */
     $post = Post::factory()->create();
@@ -86,6 +92,8 @@ it('can admin update post', function () {
     ]);
 
     $this->assertEquals(count($categoriesIds), $post->categories->count());
+
+    Mail::assertNothingSent();
 });
 
 it('can author update post', function () {
@@ -128,6 +136,8 @@ it('can author update post', function () {
     ]);
 
     $this->assertEquals(count($categoriesIds), $post->categories->count());
+
+    Mail::assertNothingSent();
 });
 
 it('cannot active user update another author post', function () {
@@ -291,4 +301,62 @@ it('Can update post with excess categories', function () {
     $post->load('categories:id');
 
     $this->assertCount(count($categoriesIds), $post->categories->pluck('id')->all());
+
+    Mail::assertNothingSent();
+});
+
+it('can send notification after updating post', function () {
+    /** @var Collection<User> $recipients */
+    $recipients = User::factory()->active()->count(rand(5, 25))->create();
+
+    /** @var User $user */
+    $user = User::factory()->when(
+        value: fake()->boolean,
+        callback: fn (UserFactory $factory) => $factory->active(),
+        default: fn (UserFactory $factory) => $factory->admin(),
+    )->create();
+
+    /** @var array<int> $categoriesIds */
+    $categoriesIds = Category::factory()
+        ->public()
+        ->count(3)
+        ->create()
+        ->pluck('id')
+        ->all();
+
+    /** @var Post $post */
+    $post = Post::factory()
+        ->when(
+            value: ! $user->isAdmin(),
+            callback: fn (PostFactory $factory) => $factory->authoredBy($user->id)
+        )->create();
+
+    $payload = Post::factory()->planned(Carbon::getTestNow()->addHour())->make(['author_id' => null])->toArray();
+    Arr::forget($payload, ['slug']);
+
+    /** @var TestCase $this */
+    $response = $this->actingAs($user)
+        ->put(
+            route('admin.posts.update', ['post' => $post->id]),
+            $payload + ['categories' => $categoriesIds],
+        );
+
+    $response->assertStatus(Response::HTTP_NO_CONTENT);
+
+    $this->assertDatabaseHas('posts', [
+        'title' => $payload['title'],
+        'slug' => Str::slug(title: $payload['title'], language: 'ru'),
+        'content' => $payload['content'],
+        'privacy' => $payload['privacy'],
+        'published_at' => $post->published_at->format('Y-m-d H:i:s'),
+        'author_id' => $user->isAdmin() ? $post->author_id : $user->id,
+    ]);
+
+    $post->load('categories:id');
+
+    $this->assertCount(count($categoriesIds), $post->categories->pluck('id')->all());
+
+    $recipientsCount = $user->isAdmin() ? $recipients->count() + 1 : $recipients->count();
+    Mail::assertQueuedCount(intdiv($recipientsCount, 20) + 1);
+    Mail::assertQueued(PostUpdated::class);
 });
