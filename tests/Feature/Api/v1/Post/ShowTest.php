@@ -7,8 +7,13 @@ use Database\Factories\PostFactory;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\TestCase;
+use Illuminate\Support\Carbon;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+
+beforeEach(function () {
+    Carbon::setTestNow(now());
+});
 
 it('cannot show post without bearer token', function () {
     /** @var Post $post */
@@ -66,7 +71,7 @@ it('can get public post', function () {
             'slug' => $post->slug,
             'title' => $post->title,
             'content' => $post->censored_content,
-            'published_at' => $post->published_at->format('Y-m-d H:i:s'),
+            'published_at' => $post->published_at->toIso8601String(),
             'author' => [
                 'name' => $post->author->name,
             ]

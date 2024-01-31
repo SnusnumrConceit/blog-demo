@@ -335,7 +335,7 @@ it('Can store post with excess categories', function () {
         'title' => $payload['title'],
         'slug' => Str::slug(title: $payload['title'], language: 'ru'),
         'content' => $payload['content'],
-        'privacy' => PrivacyEnum::PRIVATE,
+        'privacy' => $payload['privacy'],
         'published_at' => $payload['published_at'] ?? $post->created_at->format('Y-m-d H:i:s'),
         'author_id' => $user->isAdmin() ? null : $user->id,
     ]);
