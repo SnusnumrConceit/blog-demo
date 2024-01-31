@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('content')
     <div class="card">
@@ -33,7 +33,11 @@
                            id="name"
                            name="name"
                            value="{{ old('name') }}"
+                           aria-describedby="nameHelp"
                     >
+                    <div id="nameHelp" class="form-text">
+                        Не более 100 символов
+                    </div>
                 </div>
                 <div class="mb-3">
                     <label for="privacy">
@@ -42,11 +46,17 @@
                     <select name="privacy" id="privacy" class="form-control">
                         @foreach($privacyItems as $privacy)
                             <option value="{{ $privacy }}" @selected(old('privacy', $privacy))>
-                                @if(is_null($privacy))
-                                    Публичная
-                                @else
-                                    Скрытая
-                                @endif
+                                @switch($privacy)
+                                    @case(null)
+                                        <span>Публичный</span>
+                                        @break
+                                    @case(\App\Enums\Post\PrivacyEnum::PROTECTED)
+                                        <span>Скрыт от гостей</span>
+                                        @break
+                                    @case(\App\Enums\Post\PrivacyEnum::PRIVATE)
+                                        <span>Скрыт от всех</span>
+                                        @break
+                                @endswitch
                             </option>
                         @endforeach
                     </select>

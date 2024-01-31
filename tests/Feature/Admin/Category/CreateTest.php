@@ -49,5 +49,5 @@ it('create category', function () {
 
     $response->assertSuccessful();
     $response->assertViewIs('admin.categories.create');
-    $response->assertViewHas(key: 'privacyItems', value: PrivacyEnum::getValues());
+    $response->assertViewHas(key: 'privacyItems', value: [null, ...PrivacyEnum::getValues()]);
 });

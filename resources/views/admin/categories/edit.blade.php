@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('content')
     <div class="card">
@@ -47,11 +47,17 @@
                     <select class="form-control" name="privacy">
                         @foreach($privacyItems as $privacy)
                             <option value="{{ $privacy }}" @selected(old('privacy', $category->privacy))>
-                                @if(is_null($privacy))
-                                    Публичная
-                                @else
-                                    Скрытая
-                                @endif
+                                @switch($privacy)
+                                    @case(null)
+                                        <span>Публичный</span>
+                                        @break
+                                    @case(\App\Enums\Post\PrivacyEnum::PROTECTED)
+                                        <span>Скрыт от гостей</span>
+                                        @break
+                                    @case(\App\Enums\Post\PrivacyEnum::PRIVATE)
+                                        <span>Скрыт от всех</span>
+                                        @break
+                                @endswitch
                             </option>
                         @endforeach
                     </select>

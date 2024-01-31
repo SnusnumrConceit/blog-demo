@@ -55,7 +55,7 @@ it('edit category', function () {
     $response->assertSuccessful();
     $response->assertViewIs('admin.categories.edit');
     $response->assertViewHasAll([
-        'privacyItems' => PrivacyEnum::getValues(),
+        'privacyItems' => [null, ...PrivacyEnum::getValues()],
         'category' => $category
     ]);
 });
