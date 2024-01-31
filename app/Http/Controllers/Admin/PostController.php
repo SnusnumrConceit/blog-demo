@@ -14,6 +14,7 @@ use App\Models\Category;
 use App\Models\Post;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Redirector;
@@ -33,7 +34,10 @@ class PostController extends Controller
     public function index(): Factory|View
     {
         $posts = Post::with('author:id,name')
-            ->paginate(15, ['id', 'title', 'privacy', 'published_at', 'created_at', 'updated_at']);
+            ->when(
+                value: ! auth()->user()->isAdmin(),
+                callback: fn (Builder $query) => $query->where('author_id', auth()->id())
+            )->paginate(15, ['id', 'title', 'privacy', 'published_at', 'created_at', 'updated_at']);
 
         return view(view: 'admin.posts.index', data: compact('posts'));
     }

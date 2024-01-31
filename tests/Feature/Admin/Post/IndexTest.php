@@ -13,7 +13,6 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 it('Cannot index posts', function () {
     $users = [
         null,
-        User::factory()->active()->create(),
         User::factory()->blocked()->create(),
         User::factory()->unverified()->create()
     ];
