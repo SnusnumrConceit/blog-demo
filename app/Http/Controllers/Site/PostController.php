@@ -9,27 +9,26 @@ use App\Models\Post;
 use App\Services\PostService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Database\Eloquent\Builder;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Contracts\View\Factory;
+use Illuminate\Contracts\View\View;
 
 class PostController extends Controller
 {
     /**
      * Список доступных постов
      *
-     * @return JsonResponse
+     * @return Factory|View
      */
-    public function index(): JsonResponse
+    public function index(): Factory|View
     {
         $posts = Post::with('author:id,name')
             ->whereNull('privacy')
             ->when(
                 value: auth()->user()?->hasRole(StatusEnum::ACTIVE),
                 callback: fn (Builder $query) => $query->orWhere('privacy', PrivacyEnum::PROTECTED)
-            )->paginate(15, ['slug', 'title', 'author_id']);
+            )->paginate(15, ['slug', 'title', 'author_id', 'published_at']);
 
-        return response()->json([
-            'posts' => $posts
-        ]);
+        return view('site.posts.index', compact('posts'));
     }
 
     /**
@@ -37,17 +36,15 @@ class PostController extends Controller
      *
      * @param Post $post
      *
-     * @return JsonResponse
+     * @return Factory|View
      * @throws AuthorizationException
      */
-    public function show(Post $post): JsonResponse
+    public function show(Post $post): Factory|View
     {
         $this->authorize('sitePostShow', $post);
 
         PostService::incrementView(post: $post, user: auth()->user());
 
-        return response()->json([
-            'post' => $post,
-        ]);
+        return view('site.posts.show', compact('post'));
     }
 }

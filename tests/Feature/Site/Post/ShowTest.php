@@ -42,6 +42,11 @@ it('can guest view public post', function () {
 
     $response->assertSuccessful();
 
+    $response->assertViewIs('site.posts.show');
+    $response->assertViewHas([
+        'post' => $post
+    ]);
+
     /** проверяем, что счётчик просмотров не изменился */
     $this->assertFalse($post->views()->exists());
 });
@@ -95,6 +100,10 @@ it('can admin view private post', function () {
 
     $response->assertSuccessful();
 
+    $response->assertViewIs('site.posts.show');
+    $response->assertViewHas([
+        'post' => $post
+    ]);
     /** проверяем, что счётчик просмотров не изменился */
     $this->assertFalse($post->views()->exists());
 });
@@ -113,6 +122,11 @@ it('can active user view protected or public post', function () {
         ->get(route('site.posts.show', ['post' => $post->slug]));
 
     $response->assertSuccessful();
+
+    $response->assertViewIs('site.posts.show');
+    $response->assertViewHas([
+        'post' => $post
+    ]);
 
     /** проверяем счётчик просмотров */
     $this->assertEquals(1, $post->views()->count());
@@ -136,6 +150,11 @@ it('cannot increment view when post has been viewed earlier', function () {
         ->get(route('site.posts.show', ['post' => $post->slug]));
 
     $response->assertSuccessful();
+
+    $response->assertViewIs('site.posts.show');
+    $response->assertViewHas([
+        'post' => $post
+    ]);
 
     /** проверяем, что счётчик просмотров не изменился */
     $this->assertEquals(1, $post->views()->count());

@@ -6,35 +6,40 @@ use App\Models\User;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\TestCase;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 it('can guest index public posts', function () {
     /** @var Collection<Post> $posts */
-    $posts = Post::factory()->count(20)->create();
+    $posts = Post::factory()->count(15)->create();
     $availablePosts = $posts->filter(fn (Post $post) => is_null($post->privacy));
 
     /** @var TestCase $this */
     $response = $this->get(route('site.posts.index'), ['Accept-Language' => 'ru-RU']);
 
-    foreach ($response->json('posts.data') as $responsePost) {
+    $response->assertSuccessful();
+    $response->assertViewIs('site.posts.index');
+    /** @var LengthAwarePaginator $responsePosts */
+    $responsePosts = $response->viewData('posts');
+    $this->assertCount($responsePosts->count(), $availablePosts);
+
+    foreach ($responsePosts as $responsePost) {
         /** @var Post $post */
-        $post = $availablePosts->where('slug', $responsePost['slug'])->first();
+        $post = $availablePosts->where('slug', $responsePost->slug)->first();
 
         $this->assertNotNull($post);
-        $this->assertEquals($post->title, $responsePost['title']);
-        $this->assertEquals($post->author_id, $responsePost['author_id']);
+        $this->assertEquals($post->title, $responsePost->title);
+        $this->assertEquals($post->author_id, $responsePost->author_id);
 
-        $author = $responsePost['author'];
-        $this->assertEquals($post->author->id, $author['id']);
-        $this->assertEquals($post->author->name, $author['name']);
+        $author = $responsePost->author;
+        $this->assertEquals($post->author->id, $author->id);
+        $this->assertEquals($post->author->name, $author->name);
     }
-
-    $response->assertSuccessful();
 });
 
 it('can active/admin user index public and protected posts', function () {
     /** @var Collection<Post> $posts */
-    $posts = Post::factory()->count(20)->create();
-    $availablePosts = $posts->filter(fn (Post $post) => $post != PrivacyEnum::PRIVATE);
+    $posts = Post::factory()->count(15)->create();
+    $availablePosts = $posts->filter(fn (Post $post) => $post->privacy != PrivacyEnum::PRIVATE);
 
     $user = User::factory()
         ->when(
@@ -48,16 +53,21 @@ it('can active/admin user index public and protected posts', function () {
 
     $response->assertSuccessful();
 
-    foreach ($response->json('posts.data') as $responsePost) {
+    $response->assertViewIs('site.posts.index');
+    /** @var LengthAwarePaginator $responsePosts */
+    $responsePosts = $response->viewData('posts');
+    $this->assertCount($responsePosts->count(), $availablePosts);
+
+    foreach ($responsePosts as $responsePost) {
         /** @var Post $post */
         $post = $availablePosts->where('slug', $responsePost['slug'])->first();
 
         $this->assertNotNull($post);
-        $this->assertEquals($post->title, $responsePost['title']);
-        $this->assertEquals($post->author_id, $responsePost['author_id']);
+        $this->assertEquals($post->title, $responsePost->title);
+        $this->assertEquals($post->author_id, $responsePost->author_id);
 
-        $author = $responsePost['author'];
-        $this->assertEquals($post->author->id, $author['id']);
-        $this->assertEquals($post->author->name, $author['name']);
+        $author = $responsePost->author;
+        $this->assertEquals($post->author->id, $author->id);
+        $this->assertEquals($post->author->name, $author->name);
     }
 });
