@@ -55,6 +55,12 @@
                                 </a>
 
                                 <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                                    @if (auth()->user()->hasRole(\App\Enums\User\StatusEnum::ACTIVE))
+                                        <a href="{{ route('admin.dashboard') }}" class="dropdown-item">
+                                            Админка
+                                        </a>
+                                    @endif
+                                    <hr>
                                     <a class="dropdown-item" href="{{ route('logout') }}"
                                        onclick="event.preventDefault();
                                                      document.getElementById('logout-form').submit();">
@@ -73,7 +79,29 @@
         </nav>
 
         <main class="py-4 px-5">
-            @yield('content')
+            <div class="row">
+                <div class="col-1">
+                    <ul class="nav flex-column nav-pills">
+                        <li class="nav-item">
+                            <a class="nav-link @if(request()->routeIs('site.posts.*')) active @endif"
+                               href="{{ route('site.posts.index') }}"
+                            >
+                                Посты
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @if(request()->routeIs('site.categories.*')) active @endif"
+                               href="{{ route('site.categories.index') }}"
+                            >
+                                Категории
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-11">
+                    @yield('content')
+                </div>
+            </div>
         </main>
     </div>
 </body>

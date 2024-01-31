@@ -5,6 +5,33 @@ use App\Models\Category;
 use App\Models\User;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\TestCase;
+use Illuminate\Pagination\LengthAwarePaginator;
+
+it ('can nobody index private categories', function () {
+    /** @var Category $categories */
+    Category::factory()->private()->count(20)->create();
+
+    $users = [
+        null,
+        User::factory()->admin()->create(),
+        User::factory()->active()->create(),
+        User::factory()->blocked()->create(),
+        User::factory()->unverified()->create(),
+    ];
+
+    foreach ($users as $user) {
+        /** @var TestCase $this */
+        $response = ! $user
+            ? $this->get(route('site.categories.index'))
+            : $this->actingAs($user)->get(route('site.categories.index'));
+
+        $response->assertSuccessful();
+        $response->assertViewIs('site.categories.index');
+        /** @var LengthAwarePaginator $responseCategories */
+        $responseCategories = $response->viewData('categories');
+        $this->assertTrue($responseCategories->isEmpty());
+    }
+});
 
 it('can guest index public categories', function () {
     /** @var Category $categories */
@@ -16,21 +43,16 @@ it('can guest index public categories', function () {
 
     $response->assertSuccessful();
 
-    foreach ($response->json('categories.data') as $responseCategory) {
-        /** @var Category $category */
-        $category = $availableCategories->where('slug', $responseCategory['slug'])->first();
-
-        $this->assertNotNull($category);
-
-        $this->assertEquals($category->name, $responseCategory['name']);
-        $this->assertEmpty($responseCategory['posts']);
-    }
+    $response->assertViewIs('site.categories.index');
+    /** @var LengthAwarePaginator $responseCategories */
+    $responseCategories = $response->viewData('categories');
+    $this->assertCount($responseCategories->total(), $availableCategories);
 });
 
 it('can active/admin user index public and protected categories', function () {
     /** @var Category $categories */
     $categories = Category::factory()->count(20)->create();
-    $availableCategories = $categories->filter(fn (Category $category) => $category != PrivacyEnum::PRIVATE);
+    $availableCategories = $categories->filter(fn (Category $category) => $category->privacy != PrivacyEnum::PRIVATE);
 
     $user = User::factory()
         ->when(
@@ -45,13 +67,9 @@ it('can active/admin user index public and protected categories', function () {
 
     $response->assertSuccessful();
 
-    foreach ($response->json('categories.data') as $responseCategory) {
-        /** @var Category $category */
-        $category = $availableCategories->where('slug', $responseCategory['slug'])->first();
+    $response->assertViewIs('site.categories.index');
 
-        $this->assertNotNull($category);
-
-        $this->assertEquals($category->name, $responseCategory['name']);
-        $this->assertEmpty($responseCategory['posts']);
-    }
+    /** @var LengthAwarePaginator $responseCategories */
+    $responseCategories = $response->viewData('categories');
+    $this->assertCount($responseCategories->total(), $availableCategories);
 });

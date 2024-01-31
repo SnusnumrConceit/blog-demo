@@ -20,8 +20,10 @@ it('can guest view public category', function () {
     $response = $this->get(route('site.categories.show', ['category' => $category->slug]));
 
     $response->assertSuccessful();
+    $response->assertViewIs('site.categories.show');
 
-    $responseCategory = $response->json('category');
+    /** @var Category $responseCategory */
+    $responseCategory = $response->viewData('category');
     $this->assertEquals($category->slug, $responseCategory['slug']);
     $this->assertEquals($category->name, $responseCategory['name']);
     $this->assertEmpty($responseCategory['posts']);
@@ -40,11 +42,12 @@ it('can guest view public category with public posts', function () {
     $response = $this->get(route('site.categories.show', ['category' => $category->slug]));
 
     $response->assertSuccessful();
+    $response->assertViewIs('site.categories.show');
+    /** @var Category $responseCategory */
+    $responseCategory = $response->viewData('category');
 
-    $responseCategory = $response->json('category');
-
-    $this->assertEquals($category->slug, $responseCategory['slug']);
-    $this->assertEquals($category->name, $responseCategory['name']);
+    $this->assertEquals($category->slug, $responseCategory->slug);
+    $this->assertEquals($category->name, $responseCategory->name);
 
     $this->assertCount(
         $availablePosts->whereNull('privacy')->count(),
@@ -53,15 +56,15 @@ it('can guest view public category with public posts', function () {
 
     foreach ($responseCategory['posts'] as $responsePost) {
         /** @var Post $post */
-        $post = $availablePosts->where('slug', $responsePost['slug'])->first();
+        $post = $availablePosts->where('slug', $responsePost->slug)->first();
 
         $this->assertNotNull($post);
-        $this->assertEquals($post->title, $responsePost['title']);
-        $this->assertEquals($post->author_id, $responsePost['author_id']);
+        $this->assertEquals($post->title, $responsePost->title);
+        $this->assertEquals($post->author_id, $responsePost->author_id);
 
-        $author = $responsePost['author'];
-        $this->assertEquals($post->author->id, $author['id']);
-        $this->assertEquals($post->author->name, $author['name']);
+        $author = $responsePost->author;
+        $this->assertEquals($post->author->id, $author->id);
+        $this->assertEquals($post->author->name, $author->name);
     }
 });
 
@@ -109,10 +112,12 @@ it('can admin view private category', function () {
 
     $response->assertSuccessful();
 
-    $responseCategory = $response->json('category');
-    $this->assertEquals($category->slug, $responseCategory['slug']);
-    $this->assertEquals($category->name, $responseCategory['name']);
-    $this->assertEmpty($responseCategory['posts']);
+    $response->assertViewIs('site.categories.show');
+    /** @var Category $responseCategory */
+    $responseCategory = $response->viewData('category');
+    $this->assertEquals($category->slug, $responseCategory->slug);
+    $this->assertEquals($category->name, $responseCategory->name);
+    $this->assertEmpty($responseCategory->posts);
 });
 
 it('can active user view protected or public category', function () {
@@ -132,10 +137,12 @@ it('can active user view protected or public category', function () {
 
     $response->assertSuccessful();
 
-    $responseCategory = $response->json('category');
-    $this->assertEquals($category->slug, $responseCategory['slug']);
-    $this->assertEquals($category->name, $responseCategory['name']);
-    $this->assertEmpty($responseCategory['posts']);
+    $response->assertViewIs('site.categories.show');
+    /** @var Category $responseCategory */
+    $responseCategory = $response->viewData('category');
+    $this->assertEquals($category->slug, $responseCategory->slug);
+    $this->assertEquals($category->name, $responseCategory->name);
+    $this->assertEmpty($responseCategory->posts);
 });
 
 it('can admin/active user view protected or public category with protected posts', function () {
@@ -167,21 +174,22 @@ it('can admin/active user view protected or public category with protected posts
 
     $response->assertSuccessful();
 
-    $responseCategory = $response->json('category');
-    $this->assertEquals($category->slug, $responseCategory['slug']);
-    $this->assertEquals($category->name, $responseCategory['name']);
-    $this->assertCount($availablePosts->count(), $responseCategory['posts']);
+    $response->assertViewIs('site.categories.show');
+    $responseCategory = $response->viewData('category');
+    $this->assertEquals($category->slug, $responseCategory->slug);
+    $this->assertEquals($category->name, $responseCategory->name);
+    $this->assertCount($availablePosts->count(), $responseCategory->posts);
 
-    foreach ($responseCategory['posts'] as $responsePost) {
+    foreach ($responseCategory->posts as $responsePost) {
         /** @var Post $post */
-        $post = $availablePosts->where('slug', $responsePost['slug'])->first();
+        $post = $availablePosts->where('slug', $responsePost->slug)->first();
 
         $this->assertNotNull($post);
-        $this->assertEquals($post->title, $responsePost['title']);
-        $this->assertEquals($post->author_id, $responsePost['author_id']);
+        $this->assertEquals($post->title, $responsePost->title);
+        $this->assertEquals($post->author_id, $responsePost->author_id);
 
         $author = $responsePost['author'];
-        $this->assertEquals($post->author->id, $author['id']);
-        $this->assertEquals($post->author->name, $author['name']);
+        $this->assertEquals($post->author->id, $author->id);
+        $this->assertEquals($post->author->name, $author->name);
     }
 });

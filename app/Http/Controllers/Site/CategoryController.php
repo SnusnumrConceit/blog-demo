@@ -9,34 +9,27 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Database\Eloquent\Builder;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Contracts\View\Factory;
+use Illuminate\Contracts\View\View;
 
 class CategoryController extends Controller
 {
     /**
      * Список категорий
      *
-     * @return JsonResponse
+     * @return Factory|View
      */
-    public function index(): JsonResponse
+    public function index(): Factory|View
     {
-        $categories = Category::with(['posts' => function (Builder $query) {
-            $query->select(['slug', 'title'])
-                ->whereNull('privacy')
-                ->when(
-                    value: auth()->user()?->hasRole(StatusEnum::ACTIVE),
-                    callback: fn (Builder $query) => $query->orWhere('privacy', PostPrivacyEnum::PROTECTED)
-                );
-            }])
+        $categories = Category::query()->withCount('posts')
             ->whereNull('privacy')
             ->when(
                 value: auth()->user()?->hasRole(StatusEnum::ACTIVE),
                 callback: fn (Builder $query) => $query->orWhere('privacy', PrivacyEnum::PROTECTED)
-            )->paginate(15, ['slug', 'name']);
+            )
+            ->paginate(15, ['slug', 'name', 'posts']);
 
-        return response()->json([
-            'categories' => $categories
-        ]);
+        return view('site.categories.index', compact('categories'));
     }
 
     /**
@@ -44,17 +37,17 @@ class CategoryController extends Controller
      *
      * @param Category $category
      *
-     * @return JsonResponse
-     * @throws AuthorizationException
+     * @return  Factory|View
+     * @throws  AuthorizationException
      */
-    public function show(Category $category): JsonResponse
+    public function show(Category $category): Factory|View
     {
         $this->authorize('view', $category);
 
         $category->load(
             [
                 'posts' => function (Builder $query) {
-                    $query->select(['slug', 'title', 'author_id'])
+                    $query->select(['slug', 'title', 'author_id', 'published_at'])
                         ->whereNull('privacy')
                         ->when(
                             value: auth()->user()?->hasRole(StatusEnum::ACTIVE),
@@ -64,8 +57,6 @@ class CategoryController extends Controller
                 'posts.author:id,name',
             ]);
 
-        return response()->json([
-            'category' => $category->only(['slug', 'name', 'posts']),
-        ]);
+        return view('site.categories.show', compact('category'));
     }
 }
