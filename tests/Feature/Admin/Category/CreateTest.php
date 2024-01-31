@@ -6,9 +6,9 @@ use App\Enums\Category\PrivacyEnum;
 use App\Models\Category;
 use App\Models\User;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Foundation\Testing\TestCase;
 use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
-use Illuminate\Testing\TestResponse;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 it('cannot create category', function () {
@@ -23,7 +23,7 @@ it('cannot create category', function () {
     ];
 
     foreach ($users as $user) {
-        /** @var TestResponse $response */
+        /** @var TestCase $this */
         $response = is_null($user)
             ? $this->get(route('admin.categories.create'), $payload)
             : $this->actingAs($user)->get(route('admin.categories.create'), $payload);
@@ -42,9 +42,12 @@ it('cannot create category', function () {
 it('create category', function () {
     $user = User::factory()->admin()->create();
 
-    /** @var TestResponse $response */
-    $response = $this->actingAs($user)->get(route('admin.categories.create'));
+    /** @var TestCase $this */
+    $response = $this->actingAs($user)
+        ->fromRoute('admin.categories.index')
+        ->get(route('admin.categories.create'));
 
     $response->assertSuccessful();
-    $response->assertContent(json_encode(['privacyItems' => PrivacyEnum::getValues()]));
+    $response->assertViewIs('admin.categories.create');
+    $response->assertViewHas(key: 'privacyItems', value: PrivacyEnum::getValues());
 });

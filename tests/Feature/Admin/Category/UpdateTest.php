@@ -5,10 +5,10 @@ namespace Tests\Feature\Admin\Category;
 use App\Models\Category;
 use App\Models\User;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Foundation\Testing\TestCase;
 use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
-use Illuminate\Testing\TestResponse;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
@@ -26,7 +26,7 @@ it('can not update category', function () {
     ];
 
     foreach ($users as $user) {
-        /** @var TestResponse $response */
+        /** @var TestCase $this */
         $response = is_null($user)
             ? $this->put(route('admin.categories.update', ['category' => $category->id]), $payload)
             : $this->actingAs($user)
@@ -51,11 +51,14 @@ it('update category', function () {
     $payload = Category::factory()->make()->toArray();
     Arr::forget($payload, ['slug']);
 
-    /** @var TestResponse $response */
+    /** @var TestCase $this */
     $response = $this->actingAs($user)
+        ->fromRoute('admin.categories.edit', ['category' => $category->id])
         ->put(route('admin.categories.update', ['category' => $category->id]), $payload);
 
-    $response->assertStatus(Response::HTTP_NO_CONTENT);
+    $response->assertStatus(Response::HTTP_FOUND);
+    $response->assertRedirectToRoute('admin.categories.show', ['category' => $category]);
+    $response->assertSessionHas(key: 'success', value: 'Категория успешно обновлена');
 
     $this->assertDatabaseHas('categories', [
         'name' => $payload['name'],
@@ -78,8 +81,9 @@ it('can not update category with invalid params', function () {
 
     foreach ($invalidParams as $param => $values) {
         foreach ($values as $value) {
-            /** @var TestResponse $response */
+            /** @var TestCase $this */
             $response = $this->actingAs($user)
+                ->fromRoute('admin.categories.edit', ['category' => $category->id])
                 ->put(
                     route('admin.categories.update', ['category' => $category->id]),
                     array_merge($payload, [$param => $value])
@@ -102,7 +106,7 @@ it('can not update category with another similar category', function () {
         'name' => ucfirst($similarCategory->name),
     ]);
 
-    /** @var TestResponse $response */
+    /** @var TestCase $this */
     $response = $this->actingAs($user)->put(route('admin.categories.update', ['category' => $category->id]), $payload);
 
     $this->assertInstanceOf(ValidationException::class, $response->exception);

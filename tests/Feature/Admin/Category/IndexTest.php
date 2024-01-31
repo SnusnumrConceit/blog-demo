@@ -5,15 +5,12 @@ namespace Tests\Feature\Admin\Category;
 use App\Models\Category;
 use App\Models\User;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Foundation\Testing\TestCase;
 use Illuminate\Http\Response;
-use Illuminate\Support\Str;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
-it('cannot delete category', function () {
-    /** @var Category $category */
-    $category = Category::factory()->create();
-
+it('Cannot index categories', function () {
     $users = [
         null,
         User::factory()->active()->create(),
@@ -24,8 +21,8 @@ it('cannot delete category', function () {
     foreach ($users as $user) {
         /** @var TestCase $this */
         $response = is_null($user)
-            ? $this->delete(route('admin.categories.destroy', ['category' => $category->id]))
-            : $this->actingAs($user)->delete(route('admin.categories.destroy', ['category' => $category->id]));
+            ? $this->get(route('admin.categories.index'))
+            : $this->actingAs($user)->get(route('admin.categories.index'));
 
         if (! $user) {
             $this->assertInstanceOf(AuthenticationException::class, $response->exception);
@@ -38,24 +35,17 @@ it('cannot delete category', function () {
     }
 });
 
-it('delete category', function () {
+it('Can admin index categories', function () {
+    /** @var User $user */
     $user = User::factory()->admin()->create();
 
-    /** @var Category $category */
-    $category = Category::factory()->create();
+    Category::factory()->count(10)->create();
 
     /** @var TestCase $this */
     $response = $this->actingAs($user)
-        ->fromRoute('admin.categories.show', ['category' => $category->id])
-        ->delete(route('admin.categories.destroy', ['category' => $category->id]));
+        ->get(route('admin.categories.index'));
 
-    $response->assertStatus(Response::HTTP_FOUND);
-    $response->assertRedirectToRoute('admin.categories.index');
-    $response->assertSessionHas(key: 'success', value: 'Категория успешно удалена');
-
-    $this->assertDatabaseMissing('categories', [
-        'name' => $category->name,
-        'slug' => Str::slug(title: $category->name, language: 'ru'),
-        'privacy' => $category->privacy,
-    ]);
+    $response->assertSuccessful();
+    $response->assertViewIs('admin.categories.index');
+    $this->assertInstanceOf(Paginator::class, $response->viewData('categories'));
 });

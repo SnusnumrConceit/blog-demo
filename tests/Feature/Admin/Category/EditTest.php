@@ -6,9 +6,9 @@ use App\Enums\Category\PrivacyEnum;
 use App\Models\Category;
 use App\Models\User;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Foundation\Testing\TestCase;
 use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
-use Illuminate\Testing\TestResponse;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 it('can not edit category', function () {
@@ -25,7 +25,7 @@ it('can not edit category', function () {
     ];
 
     foreach ($users as $user) {
-        /** @var TestResponse $response */
+        /** @var TestCase $this */
         $response = is_null($user)
             ? $this->get(route('admin.categories.edit', ['category' => $category->id]), $payload)
             : $this->actingAs($user)->get(route('admin.categories.edit', ['category' => $category->id]), $payload);
@@ -47,12 +47,15 @@ it('edit category', function () {
     /** @var Category $category */
     $category = Category::factory()->create();
 
-    /** @var TestResponse $response */
-    $response = $this->actingAs($user)->get(route('admin.categories.edit', ['category' => $category->id]));
+    /** @var TestCase $this */
+    $response = $this->actingAs($user)
+        ->fromRoute('admin.categories.show', ['category' => $category->id])
+        ->get(route('admin.categories.edit', ['category' => $category->id]));
 
     $response->assertSuccessful();
-    $response->assertContent(json_encode([
+    $response->assertViewIs('admin.categories.edit');
+    $response->assertViewHasAll([
         'privacyItems' => PrivacyEnum::getValues(),
-        'category' => $category->toArray(),
-    ]));
+        'category' => $category
+    ]);
 });

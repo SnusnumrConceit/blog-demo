@@ -7,79 +7,80 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Category\StoreCategoryRequest;
 use App\Http\Requests\Admin\Category\UpdateCategoryRequest;
 use App\Models\Category;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Response;
+use Illuminate\Contracts\View\Factory;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Routing\Redirector;
 
 class CategoryController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index(): JsonResponse
+    public function index(): View|Factory
     {
-        $categories = Category::query()->select(['name', 'privacy', 'created_at', 'updated_at']);
+        $categories = Category::paginate(15, ['name', 'privacy', 'created_at', 'updated_at']);
 
-        return response()->json(['categories' => $categories->paginate()]);
+        return view('admin.categories.index', compact('categories'));
     }
 
     /**
      * Show the form for creating a new resource.
      */
-    public function create(): JsonResponse
+    public function create(): View|Factory
     {
         $privacyItems = PrivacyEnum::getValues();
 
-        return response()->json(['privacyItems' => $privacyItems]);
+        return view('admin.categories.create', compact('privacyItems'));
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreCategoryRequest $request): JsonResponse
+    public function store(StoreCategoryRequest $request): RedirectResponse|Redirector
     {
         $category = Category::create($request->validated());
 
-        return response()->json(data: ['category' => $category], status: Response::HTTP_CREATED);
+        return redirect(route('admin.categories.show', ['category' => $category->id]))
+            ->with(key: 'success', value: 'Категория успешно создана');
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Category $category): JsonResponse
+    public function show(Category $category): View|Factory
     {
-        return response()->json(['category' => $category]);
+        return view('admin.categories.show', compact('category'));
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Category $category): JsonResponse
+    public function edit(Category $category): View|Factory
     {
         $privacyItems = PrivacyEnum::getValues();
 
-        return response()->json([
-            'privacyItems' => $privacyItems,
-            'category' => $category,
-        ]);
+        return view('admin.categories.edit', compact('category', 'privacyItems'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateCategoryRequest $request, Category $category): JsonResponse
+    public function update(UpdateCategoryRequest $request, Category $category): RedirectResponse|Redirector
     {
         $category->update($request->validated());
 
-        return response()->json(data: [], status: Response::HTTP_NO_CONTENT);
+        return redirect(route('admin.categories.show', ['category' => $category->id]))
+            ->with(key: 'success', value: 'Категория успешно обновлена');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Category $category): JsonResponse
+    public function destroy(Category $category): RedirectResponse|Redirector
     {
         $category->delete();
 
-        return response()->json(data: [], status: Response::HTTP_NO_CONTENT);
+        return redirect(route('admin.categories.index'))->with(key: 'success', value: 'Категория успешно удалена');
     }
 }
