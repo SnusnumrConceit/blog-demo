@@ -74,7 +74,7 @@ class StorePostRequest extends BaseRequest
                 'nullable',
                 Rule::in(PrivacyEnum::getValues())
             ],
-            'published_at' => 'nullable|date|after:' . now()->toDayDateTimeString(),
+            'published_at' => 'nullable|date|after:' . now()->toDateTimeString(),
             'categories' => [
                 'bail',
                 'required',

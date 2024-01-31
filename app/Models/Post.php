@@ -50,7 +50,7 @@ class Post extends Model
     ];
 
     protected $casts = [
-        'published_at' => 'datetime:Y.m.d H:i:s'
+        'published_at' => 'datetime:Y-m-d H:i:s'
     ];
 
     protected static function boot()

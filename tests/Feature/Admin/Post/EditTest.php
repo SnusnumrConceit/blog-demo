@@ -81,7 +81,9 @@ it('can author edit post', function () {
     $response->assertViewHasAll([
         'privacyItems' => [null, ...PrivacyEnum::getValues()],
         'post' => $post,
-        'categories' => $categories->pluck('name', 'id')->all()
+        'categories' => $categories->filter(fn (Category $category) => $category->privacy != PrivacyEnum::PRIVATE)
+            ->pluck('name', 'id')
+            ->all()
     ]);
 });
 

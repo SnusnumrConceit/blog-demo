@@ -14,6 +14,7 @@ use App\Models\Category;
 use App\Models\Post;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Redirector;
 
@@ -95,9 +96,16 @@ class PostController extends Controller
      */
     public function edit(Post $post): Factory|View
     {
-        $post->load('categories:id,name');
+        $post->load(['categories' => fn (BelongsToMany $query) =>
+            $query->select(['categories.id as id', 'name', 'privacy'])
+                ->whereNull('privacy')
+                ->when(
+                    value: ! auth()->user()->isAdmin(),
+                    callback: fn () => $query->orWhere('privacy', PrivacyEnum::PROTECTED)
+                )
+        ]);
 
-        $categories = auth()->user()->hasRole(StatusEnum::ADMIN)
+        $categories = auth()->user()->isAdmin()
             ? Category::all()
             : Category::whereNull('privacy')->orWhere('privacy', PrivacyEnum::PROTECTED)->get();
 

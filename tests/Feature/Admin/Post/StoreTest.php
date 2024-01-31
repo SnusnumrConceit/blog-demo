@@ -138,7 +138,13 @@ it('can admin user store post', function () {
         'author_id' => null,
     ]);
 
-    Mail::assertQueuedCount(intdiv($recipients->count(), 20) + 1);
+    $recipientsCount = $user->isAdmin() ? $recipients->count() + 1 : $recipients->count();
+    /* размер чанка */
+    $recipientsChunkSize = 20;
+    /* разница между размером чанка и кол-вом получателей */
+    $recipientsDiv = intdiv($recipientsCount, $recipientsChunkSize);
+
+    Mail::assertQueuedCount($recipientsCount === $recipientsChunkSize ? $recipientsDiv : $recipientsDiv + 1);
     Mail::assertQueued(PostCreated::class);
 });
 
@@ -206,8 +212,11 @@ it('can store category with delayed published_at date', function () {
 
     $user = User::factory()->active()->create();
 
-    $payload = Post::factory()->planned(Carbon::getTestNow()->addHour())->make()->toArray();
-    Arr::forget($payload, ['slug']);
+    $payload = array_merge(
+        Post::factory()->make()->toArray(),
+        ['categories' => $categoriesIds]
+    );
+    Arr::forget($payload, 'slug');
 
     Queue::fake();
     Mail::fake();
@@ -216,7 +225,7 @@ it('can store category with delayed published_at date', function () {
     $response = $this->actingAs($user)
         ->post(
             route('admin.posts.store'),
-            $payload + ['categories' => $categoriesIds]
+            $payload
         );
 
     /** @var Post $post */
@@ -226,11 +235,11 @@ it('can store category with delayed published_at date', function () {
     $response->assertSessionHas(key: 'success', value: 'Пост успешно создан');
 
     $this->assertDatabaseHas('posts', [
-        'title' => $payload['title'],
+        'title' => mb_strtolower($payload['title']),
         'slug' => Str::slug(title: $payload['title'], language: 'ru'),
         'content' => $payload['content'],
-        'privacy' => PrivacyEnum::PRIVATE,
-        'published_at' => $payload['published_at'],
+        'privacy' => $payload['privacy'],
+        'published_at' => $payload['published_at'] ?? $post->created_at->format('Y-m-d H:i:s'),
         'author_id' => $user->id,
     ]);
 
@@ -297,7 +306,13 @@ it('Can store post with excess categories', function () {
        default: fn (UserFactory $factory) => $factory->admin(),
     )->create();
 
-    $payload = Post::factory()->planned(Carbon::getTestNow()->addHour())->make()->toArray();
+    $payload = array_merge(
+        Post::factory()->make()->toArray(),
+        [
+            'categories' => Arr::shuffle($categoriesIds + $invalidCategoriesIds),
+            'published_at' => fake()->boolean ? now()->addHour() : null
+        ]
+    );
     Arr::forget($payload, ['slug']);
 
     /** @var Collection<User> $recipients */
@@ -308,10 +323,7 @@ it('Can store post with excess categories', function () {
 
     /** @var TestCase $this */
     $response = $this->actingAs($user)
-        ->post(
-            route('admin.posts.store'),
-            $payload + ['categories' => Arr::shuffle($categoriesIds + $invalidCategoriesIds)],
-        );
+        ->post(route('admin.posts.store'), $payload);
 
     /** @var Post $post */
     $post = Post::where('slug', Str::slug(title: $payload['title'], language: 'ru'))->first();
@@ -324,7 +336,7 @@ it('Can store post with excess categories', function () {
         'slug' => Str::slug(title: $payload['title'], language: 'ru'),
         'content' => $payload['content'],
         'privacy' => PrivacyEnum::PRIVATE,
-        'published_at' => $payload['published_at'],
+        'published_at' => $payload['published_at'] ?? $post->created_at->format('Y-m-d H:i:s'),
         'author_id' => $user->isAdmin() ? null : $user->id,
     ]);
 

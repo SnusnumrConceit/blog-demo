@@ -189,6 +189,5 @@ it('can send notification after deleting post', function () {
     $recipientsDiv = intdiv($recipientsCount, $recipientsChunkSize);
 
     Mail::assertQueuedCount($recipientsCount === $recipientsChunkSize ? $recipientsDiv : $recipientsDiv + 1);
-    Mail::assertQueuedCount(intdiv($recipients->count(), 20) + 1);
     Mail::assertQueued(PostDeleted::class);
 });
