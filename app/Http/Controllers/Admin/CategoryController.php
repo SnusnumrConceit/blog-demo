@@ -19,7 +19,7 @@ class CategoryController extends Controller
      */
     public function index(): View|Factory
     {
-        $categories = Category::paginate(15, ['name', 'privacy', 'created_at', 'updated_at']);
+        $categories = Category::paginate(15, ['id', 'name', 'privacy', 'created_at', 'updated_at']);
 
         return view('admin.categories.index', compact('categories'));
     }
@@ -29,7 +29,7 @@ class CategoryController extends Controller
      */
     public function create(): View|Factory
     {
-        $privacyItems = PrivacyEnum::getValues();
+        $privacyItems = [null, ...PrivacyEnum::getValues()];
 
         return view('admin.categories.create', compact('privacyItems'));
     }
@@ -58,7 +58,7 @@ class CategoryController extends Controller
      */
     public function edit(Category $category): View|Factory
     {
-        $privacyItems = PrivacyEnum::getValues();
+        $privacyItems = [null, ...PrivacyEnum::getValues()];
 
         return view('admin.categories.edit', compact('category', 'privacyItems'));
     }
