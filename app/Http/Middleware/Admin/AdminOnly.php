@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
-class AdminAccess
+class AdminOnly
 {
     /**
      * Handle an incoming request.
@@ -20,7 +20,7 @@ class AdminAccess
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (! auth()->user()->hasRole(StatusEnum::ACTIVE)) {
+        if (! auth()->user()->isAdmin()) {
             throw new AccessDeniedHttpException('Доступ запрещён');
         }
 
