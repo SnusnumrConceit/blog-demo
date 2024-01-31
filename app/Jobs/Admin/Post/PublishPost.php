@@ -34,7 +34,7 @@ class PublishPost implements ShouldQueue, ShouldBeUnique
         Log::info(vsprintf(
             '%s: публикация поста %d',
             [
-                class_basename(statis::class),
+                class_basename(static::class),
                 $this->postId,
             ]
         ));
