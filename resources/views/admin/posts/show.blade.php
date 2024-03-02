@@ -1,14 +1,14 @@
 @extends('layouts.admin')
 
 @section('content')
-    @if(session()->has('success'))
+    @session('success')
         <div class="alert alert-success mb-4">
             <h5 class="mb-0">
                 <i class="bi bi-check-circle"></i>
                 {{ session('success') }}
             </h5>
         </div>
-    @endif
+    @endsession
 
     <div class="card">
         <div class="card-header">
