@@ -24,7 +24,7 @@ class PostController extends Controller
         $posts = Post::with('author:id,name')
             ->whereNull('privacy')
             ->when(
-                value: auth()->user()?->hasRole(StatusEnum::ACTIVE),
+                value: auth()->user()?->hasRole(StatusEnum::ACTIVE->value),
                 callback: fn (Builder $query) => $query->orWhere('privacy', PrivacyEnum::PROTECTED->value)
             )->paginate(15, ['slug', 'title', 'author_id', 'published_at']);
 

@@ -2,7 +2,6 @@
 
 namespace App\Http\Middleware\Admin;
 
-use App\Enums\User\StatusEnum;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;

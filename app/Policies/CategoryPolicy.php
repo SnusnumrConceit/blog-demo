@@ -27,6 +27,6 @@ class CategoryPolicy
 
         if ($user->isAdmin()) return true;
 
-        return ! $category->isPrivate() && $user->hasRole(StatusEnum::ACTIVE);
+        return ! $category->isPrivate() && $user->hasRole(StatusEnum::ACTIVE->value);
     }
 }

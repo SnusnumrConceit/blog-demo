@@ -2,12 +2,15 @@
 
 namespace App\Enums\User;
 
-use App\Enums\BaseEnum;
+use App\Enums\Contracts\ArrayableEnum;
+use App\Enums\Traits\ArrayableAccess;
 
-class StatusEnum extends BaseEnum
+enum StatusEnum: string implements ArrayableEnum
 {
-    const ACTIVE = 'active';
-    const BLOCKED = 'blocked';
-    const ADMIN = 'admin';
-    const EMAIL_VERIFICATION = 'email_verification';
+    use ArrayableAccess;
+
+    case ACTIVE = 'active';
+    case BLOCKED = 'blocked';
+    case ADMIN = 'admin';
+    case EMAIL_VERIFICATION = 'email_verification';
 }

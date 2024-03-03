@@ -23,7 +23,7 @@ class CategoryController extends Controller
         $categories = Category::query()->withCount('posts')
             ->whereNull('privacy')
             ->when(
-                value: auth()->user()?->hasRole(StatusEnum::ACTIVE),
+                value: auth()->user()?->hasRole(StatusEnum::ACTIVE->value),
                 callback: fn (Builder $query) => $query->orWhere('privacy', PrivacyEnum::PROTECTED->value)
             )
             ->paginate(15, ['slug', 'name', 'posts']);
@@ -49,7 +49,7 @@ class CategoryController extends Controller
                     $query->select(['slug', 'title', 'author_id', 'published_at'])
                         ->whereNull('privacy')
                         ->when(
-                            value: auth()->user()?->hasRole(StatusEnum::ACTIVE),
+                            value: auth()->user()?->hasRole(StatusEnum::ACTIVE->value),
                             callback: fn (Builder $query) => $query->orWhere('privacy', PrivacyEnum::PROTECTED->value)
                         );
                 },

@@ -55,7 +55,7 @@
                                 </a>
 
                                 <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                                    @if (auth()->user()->hasRole(\App\Enums\User\StatusEnum::ACTIVE))
+                                    @if (auth()->user()->hasRole(\App\Enums\User\StatusEnum::ACTIVE->value))
                                         <a href="{{ route('admin.dashboard') }}" class="dropdown-item">
                                             Админка
                                         </a>

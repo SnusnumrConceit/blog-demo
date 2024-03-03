@@ -49,7 +49,7 @@ class PostController extends Controller
      */
     public function create(): Factory|View
     {
-        $categories = auth()->user()->hasRole(StatusEnum::ADMIN)
+        $categories = auth()->user()->hasRole(StatusEnum::ADMIN->value)
             ? Category::all()
             : Category::whereNull('privacy')->orWhere('privacy', PrivacyEnum::PROTECTED->value)->get();
 

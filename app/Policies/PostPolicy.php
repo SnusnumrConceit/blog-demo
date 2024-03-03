@@ -23,9 +23,9 @@ class PostPolicy
     {
         if (request()->isJson()) return $post->isPublic();
 
-        if ($user->hasRole(StatusEnum::ADMIN)) return true;
+        if ($user->hasRole(StatusEnum::ADMIN->value)) return true;
 
-        return $user->hasRole(StatusEnum::ACTIVE) && $user->id === $post->author_id;
+        return $user->hasRole(StatusEnum::ACTIVE->value) && $user->id === $post->author_id;
     }
 
     /**
@@ -33,7 +33,7 @@ class PostPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasRole(StatusEnum::ADMIN) || $user->hasRole(StatusEnum::ACTIVE);
+        return $user->hasRole(StatusEnum::ADMIN->value) || $user->hasRole(StatusEnum::ACTIVE->value);
     }
 
     /**
@@ -41,9 +41,9 @@ class PostPolicy
      */
     public function update(User $user, Post $post): bool
     {
-        if ($user->hasRole(StatusEnum::ADMIN)) return true;
+        if ($user->hasRole(StatusEnum::ADMIN->value)) return true;
 
-        return $user->hasRole(StatusEnum::ACTIVE) && $user->id === $post->author_id;
+        return $user->hasRole(StatusEnum::ACTIVE->value) && $user->id === $post->author_id;
     }
 
     /**
@@ -51,9 +51,9 @@ class PostPolicy
      */
     public function delete(User $user, Post $post): bool
     {
-        if ($user->hasRole(StatusEnum::ADMIN)) return true;
+        if ($user->hasRole(StatusEnum::ADMIN->value)) return true;
 
-        return $user->hasRole(StatusEnum::ACTIVE) && $user->id === $post->author_id;
+        return $user->hasRole(StatusEnum::ACTIVE->value) && $user->id === $post->author_id;
     }
 
     /**
@@ -68,10 +68,10 @@ class PostPolicy
     {
         if(! $user) return $post->isPublic();
 
-        if ($user->hasRole(StatusEnum::ADMIN)) return true;
+        if ($user->hasRole(StatusEnum::ADMIN->value)) return true;
 
         if ($post->isPrivate()) return false;
 
-        return $user->hasRole(StatusEnum::ACTIVE);
+        return $user->hasRole(StatusEnum::ACTIVE->value);
     }
 }
