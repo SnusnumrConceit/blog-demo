@@ -2,7 +2,7 @@
 
 namespace App\Observers;
 
-use App\Enums\Post\PrivacyEnum;
+use App\Enums\PrivacyEnum;
 use App\Models\Post;
 use Illuminate\Support\Str;
 
@@ -28,7 +28,7 @@ class PostObserver
     public function creating(Post $post): void
     {
         if ($post->published_at) {
-            $post->privacy = PrivacyEnum::PRIVATE;
+            $post->privacy = PrivacyEnum::PRIVATE->value;
         }
 
         $post->published_at ??= now();

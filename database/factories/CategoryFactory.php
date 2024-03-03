@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Enums\Category\PrivacyEnum;
+use App\Enums\PrivacyEnum;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
@@ -48,7 +48,7 @@ class CategoryFactory extends Factory
     public function protected(): static
     {
         return $this->state(fn (array $attributes) => [
-            'privacy' => PrivacyEnum::PROTECTED
+            'privacy' => PrivacyEnum::PROTECTED->value
         ]);
     }
 
@@ -60,7 +60,7 @@ class CategoryFactory extends Factory
     public function private(): static
     {
         return $this->state(fn (array $attributes) => [
-           'privacy' => PrivacyEnum::PRIVATE
+           'privacy' => PrivacyEnum::PRIVATE->value
         ]);
     }
 }

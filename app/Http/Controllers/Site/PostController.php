@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Site;
 
-use App\Enums\Post\PrivacyEnum;
+use App\Enums\PrivacyEnum;
 use App\Enums\User\StatusEnum;
 use App\Http\Controllers\Controller;
 use App\Models\Post;
@@ -24,8 +24,8 @@ class PostController extends Controller
         $posts = Post::with('author:id,name')
             ->whereNull('privacy')
             ->when(
-                value: auth()->user()?->hasRole(StatusEnum::ACTIVE),
-                callback: fn (Builder $query) => $query->orWhere('privacy', PrivacyEnum::PROTECTED)
+                value: auth()->user()?->hasRole(StatusEnum::ACTIVE->value),
+                callback: fn (Builder $query) => $query->orWhere('privacy', PrivacyEnum::PROTECTED->value)
             )->paginate(15, ['slug', 'title', 'author_id', 'published_at']);
 
         return view('site.posts.index', compact('posts'));

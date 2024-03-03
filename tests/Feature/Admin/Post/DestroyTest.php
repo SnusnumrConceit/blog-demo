@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Admin\Post;
 
-use App\Enums\Post\PrivacyEnum;
+use App\Enums\PrivacyEnum;
 use App\Mail\Post\PostDeleted;
 use App\Models\Category;
 use App\Models\Post;

@@ -1,6 +1,6 @@
 <?php
 
-use App\Enums\Post\PrivacyEnum;
+use App\Enums\PrivacyEnum;
 use App\Models\Post;
 use App\Models\User;
 use Database\Factories\UserFactory;
@@ -39,7 +39,7 @@ it('can guest index public posts', function () {
 it('can active/admin user index public and protected posts', function () {
     /** @var Collection<Post> $posts */
     $posts = Post::factory()->count(15)->create();
-    $availablePosts = $posts->filter(fn (Post $post) => $post->privacy != PrivacyEnum::PRIVATE);
+    $availablePosts = $posts->filter(fn (Post $post) => $post->privacy != PrivacyEnum::PRIVATE->value);
 
     $user = User::factory()
         ->when(

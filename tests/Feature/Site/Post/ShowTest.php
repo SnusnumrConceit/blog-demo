@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Site\Post;
 
-use App\Enums\Post\PrivacyEnum;
+use App\Enums\PrivacyEnum;
 use App\Models\Post;
 use App\Models\PostView;
 use App\Models\User;
@@ -112,7 +112,7 @@ it('can active user view protected or public post', function () {
     $user = User::factory()->active()->create();
     /** @var Post $post */
     $post = Post::factory()->create([
-        'privacy' => Arr::random([null, PrivacyEnum::PROTECTED])
+        'privacy' => Arr::random([null, PrivacyEnum::PROTECTED->value])
     ]);
 
     $locale = 'ru';
@@ -136,7 +136,7 @@ it('cannot increment view when post has been viewed earlier', function () {
     $user = User::factory()->active()->create();
     /** @var Post $post */
     $post = Post::factory()->create([
-        'privacy' => Arr::random([null, PrivacyEnum::PROTECTED])
+        'privacy' => Arr::random([null, PrivacyEnum::PROTECTED->value])
     ]);
     PostView::factory()
         ->user($user->id)

@@ -10,7 +10,7 @@ class PostService
 {
     public static function incrementView(Post $post, ?User $user): void
     {
-        if (! $user || $user?->hasRole(StatusEnum::ADMIN)) return;
+        if (! $user || $user?->hasRole(StatusEnum::ADMIN->value)) return;
 
         if ($post->views()->where('user_id', $user->id)->exists()) {
             return;

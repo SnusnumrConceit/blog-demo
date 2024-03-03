@@ -22,7 +22,7 @@ class PostResource extends JsonResource
             'slug' => $this->slug,
             'title' => $this->title,
             'content' => $this->censored_content,
-            'published_at' => $this->published_at,
+            'published_at' => $this->published_at->toIso8601String(),
             'author' => $this->whenLoaded(
                 relationship: 'author',
                 value: ['name' => $this->author->name],

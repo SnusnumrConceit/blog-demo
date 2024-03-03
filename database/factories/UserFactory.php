@@ -42,7 +42,7 @@ class UserFactory extends Factory
     public function admin(): static
     {
         return $this->state(fn (array $attributes) => [
-           'status' => StatusEnum::ADMIN,
+           'status' => StatusEnum::ADMIN->value,
         ]);
     }
 
@@ -54,7 +54,7 @@ class UserFactory extends Factory
     public function active(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => StatusEnum::ACTIVE,
+            'status' => StatusEnum::ACTIVE->value,
         ]);
     }
 
@@ -66,7 +66,7 @@ class UserFactory extends Factory
     public function blocked(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => StatusEnum::BLOCKED,
+            'status' => StatusEnum::BLOCKED->value,
         ]);
     }
 
@@ -77,7 +77,7 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
-            'status' => StatusEnum::EMAIL_VERIFICATION,
+            'status' => StatusEnum::EMAIL_VERIFICATION->value,
         ]);
     }
 }

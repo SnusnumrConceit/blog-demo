@@ -60,10 +60,10 @@
                                     @case(null)
                                         <span>Публичный</span>
                                         @break
-                                    @case(\App\Enums\Post\PrivacyEnum::PROTECTED)
+                                    @case(\App\Enums\PrivacyEnum::PROTECTED->value)
                                         <span>Скрыт от гостей</span>
                                         @break
-                                    @case(\App\Enums\Post\PrivacyEnum::PRIVATE)
+                                    @case(\App\Enums\PrivacyEnum::PRIVATE->value)
                                         <span>Скрыт от всех</span>
                                         @break
                                 @endswitch

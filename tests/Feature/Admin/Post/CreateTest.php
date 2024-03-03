@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Admin\Post;
 
-use App\Enums\Post\PrivacyEnum;
+use App\Enums\PrivacyEnum;
 use App\Models\Category;
 use App\Models\Post;
 use App\Models\User;
@@ -72,7 +72,7 @@ it('can active user create post', function () {
     $response->assertViewHasAll([
         'privacyItems' => [null, ...PrivacyEnum::getValues()],
         'categories' => $categories
-            ->filter(fn (Category $category) => $category->privacy != PrivacyEnum::PRIVATE)
+            ->filter(fn (Category $category) => $category->privacy != PrivacyEnum::PRIVATE->value)
             ->pluck('name', 'id')->all()
     ]);
 });

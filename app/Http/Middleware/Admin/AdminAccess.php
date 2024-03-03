@@ -20,7 +20,7 @@ class AdminAccess
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (! auth()->user()->hasRole(StatusEnum::ACTIVE)) {
+        if (! auth()->user()->hasRole(StatusEnum::ACTIVE->value)) {
             throw new AccessDeniedHttpException('Доступ запрещён');
         }
 

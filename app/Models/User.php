@@ -88,7 +88,7 @@ class User extends Authenticatable
      */
     public function isAdmin(): bool
     {
-        return $this->status === StatusEnum::ADMIN;
+        return $this->status === StatusEnum::ADMIN->value;
     }
 
     /**
@@ -100,6 +100,6 @@ class User extends Authenticatable
      */
     public function scopeActive(Builder $query): Builder
     {
-        return $query->where('status', StatusEnum::ACTIVE);
+        return $query->where('status', StatusEnum::ACTIVE->value);
     }
 }

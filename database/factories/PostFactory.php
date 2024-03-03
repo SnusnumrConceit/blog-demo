@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Enums\Post\PrivacyEnum;
+use App\Enums\PrivacyEnum;
 use App\Models\Post;
 use App\Models\User;
 use Carbon\Carbon;
@@ -97,7 +97,7 @@ class PostFactory extends Factory
     public function protected(): static
     {
         return $this->state(fn (array $attributes) => [
-            'privacy' => PrivacyEnum::PROTECTED
+            'privacy' => PrivacyEnum::PROTECTED->value
         ]);
     }
 
@@ -109,7 +109,7 @@ class PostFactory extends Factory
     public function private(): static
     {
         return $this->state(fn (array $attributes) => [
-            'privacy' => PrivacyEnum::PRIVATE
+            'privacy' => PrivacyEnum::PRIVATE->value
         ]);
     }
 }

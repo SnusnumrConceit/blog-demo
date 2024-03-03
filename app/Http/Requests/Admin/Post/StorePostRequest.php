@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Admin\Post;
 
-use App\Enums\Post\PrivacyEnum;
+use App\Enums\PrivacyEnum;
 use App\Http\Requests\BaseRequest;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Database\Query\Builder;
@@ -85,7 +85,7 @@ class StorePostRequest extends BaseRequest
                         value: ! auth()->user()->isAdmin(),
                         callback: fn (Exists $rule) => $rule->where(
                             fn (Builder $query) => $query->whereNull('privacy')
-                                ->orWhere('privacy', PrivacyEnum::PROTECTED)
+                                ->orWhere('privacy', PrivacyEnum::PROTECTED->value)
                         ),
                     )
             ],
