@@ -2,11 +2,12 @@
 
 namespace App\Models;
 
-use App\Enums\Post\PrivacyEnum;
+use App\Models\Contracts\VisibilityModel;
+use App\Models\Traits\HasVisibility;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use App\Observers\PostObserver;
 use App\Services\CensorService;
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -29,11 +30,13 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  *
  * @property ?User $author
  * @property Collection<PostView> $views
- * @property \Illuminate\Database\Eloquent\Collection<Category> $categories
+ * @property Collection<Category> $categories
  */
-class Post extends Model
+#[ObservedBy(PostObserver::class)]
+class Post extends Model implements VisibilityModel
 {
     use HasFactory;
+    use HasVisibility;
 
     protected $fillable = [
         'title',
@@ -52,13 +55,6 @@ class Post extends Model
     protected $casts = [
         'published_at' => 'datetime:Y-m-d H:i:s'
     ];
-
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::observe(PostObserver::class);
-    }
 
     /**
      * Автор поста
@@ -93,67 +89,6 @@ class Post extends Model
     public function views(): HasMany
     {
         return $this->hasMany(related: PostView::class, foreignKey: 'post_id', localKey: 'id');
-    }
-
-    /**
-     * Доступен всем
-     *
-     * @return bool
-     */
-    public function isPublic(): bool
-    {
-        return is_null($this->privacy);
-    }
-
-
-    /**
-     * Доступен активным
-     *
-     * @return bool
-     */
-    public function isProtected(): bool
-    {
-        return $this->privacy === PrivacyEnum::PROTECTED;
-    }
-
-    /**
-     * Скрыт от всех
-     *
-     * @return bool
-     */
-    public function isPrivate(): bool
-    {
-        return $this->privacy === PrivacyEnum::PRIVATE;
-    }
-
-    /**
-     * Выборка по публичным категориям
-     *
-     * @return Builder
-     */
-    public function scopePublic(): Builder
-    {
-        return $this->whereNull('privacy');
-    }
-
-    /**
-     * Выборка по защищённым категориям
-     *
-     * @return Builder
-     */
-    public function scopeProtected(): Builder
-    {
-        return $this->where('privacy', PrivacyEnum::PROTECTED);
-    }
-
-    /**
-     * Выборка по скрытым категориям
-     *
-     * @return Builder
-     */
-    public function scopePrivate(): Builder
-    {
-        return $this->where('privacy', PrivacyEnum::PRIVATE);
     }
 
     /**

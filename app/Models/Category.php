@@ -2,14 +2,15 @@
 
 namespace App\Models;
 
-use App\Enums\Category\PrivacyEnum;
+use App\Models\Contracts\VisibilityModel;
+use App\Models\Traits\HasVisibility;
 use App\Observers\CategoryObserver;
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Collection;
 
 /**
  * @property-read int $id
@@ -24,17 +25,11 @@ use Illuminate\Database\Eloquent\Collection;
  * @property Collection<Post> $posts
  * @property Collection<Post> $publicPosts
  */
-class Category extends Model
+#[ObservedBy(CategoryObserver::class)]
+class Category extends Model implements VisibilityModel
 {
     use HasFactory;
-
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::observe(CategoryObserver::class);
-
-    }
+    use HasVisibility;
 
     protected $fillable = [
         'slug',
@@ -80,65 +75,5 @@ class Category extends Model
     public function getDisplayNameAttribute(): string
     {
         return ucfirst($this->name);
-    }
-
-    /**
-     * Выборка по публичным категориям
-     *
-     * @return Builder
-     */
-    public function scopePublic(): Builder
-    {
-        return $this->whereNull('privacy');
-    }
-
-    /**
-     * Выборка по защищённым категориям
-     *
-     * @return Builder
-     */
-    public function scopeProtected(): Builder
-    {
-        return $this->where('privacy', PrivacyEnum::PROTECTED);
-    }
-
-    /**
-     * Выборка по скрытым категориям
-     *
-     * @return Builder
-     */
-    public function scopePrivate(): Builder
-    {
-        return $this->where('privacy', PrivacyEnum::PRIVATE);
-    }
-
-    /**
-     * Публичная
-     *
-     * @return bool
-     */
-    public function isPublic(): bool
-    {
-        return is_null($this->privacy);
-    }
-
-    /**
-     * Скрыта от гостей
-     *
-     * @return bool
-     */
-    public function isProtected(): bool
-    {
-        return $this->privacy === PrivacyEnum::PROTECTED;
-    }
-
-    /**
-     * Приватная
-     *
-     * @return bool
-     */
-    public function isPrivate(): bool
-    {
-        return $this->privacy === PrivacyEnum::PRIVATE;
     }
 }
