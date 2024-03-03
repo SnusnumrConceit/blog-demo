@@ -12,10 +12,11 @@ use App\Mail\Post\PostDeleted as PostDeletedMail;
 use App\Mail\Post\PostUpdated as PostUpdatedMail;
 use App\Models\Post;
 use App\Models\User;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Mail\Mailable;
+use Illuminate\Mail\PendingMail;
+use Illuminate\Mail\SentMessage;
 use Illuminate\Support\Facades\Mail;
 
 class PostEventListener
@@ -50,41 +51,65 @@ class PostEventListener
                         ->delay(now()->diffInSeconds($post->published_at));
                 }
 
-                $users->when(
-                    value: $users->count(),
-                    callback: fn () => $users->chunk(20)
-                        ->each(
-                            fn (Collection $users) => Mail::to(
-                                users: $users->pluck('email')->all()
-                            )->send(new PostCreatedMail($post))
-                        )
-                );
+                $this->sendMailToRecipients(recipients: $users, mail: new PostCreatedMail($post));
 
                 break;
 
             case PostUpdated::class:
-                $users->when(
-                    value: $users->count(),
-                    callback: fn () => $users->chunk(20)
-                        ->each(
-                            fn (Collection $users) => Mail::to(
-                                users: $users->pluck('email')->all()
-                            )->send(new PostUpdatedMail($post))
-                        )
-                );
+                $this->sendMailToRecipients(recipients: $users, mail: new PostUpdatedMail($post));
+
                 break;
 
             case PostDeleted::class:
-                $users->when(
-                    value: $users->count(),
-                    callback: fn () => $users->chunk(20)
-                        ->each(
-                            fn (Collection $users) => Mail::to(
-                                users: $users->pluck('email')->all()
-                            )->send(new PostDeletedMail($post))
-                        )
-                );
+                $this->sendMailToRecipients(recipients: $users, mail: new PostDeletedMail($post));
+
                 break;
         }
+    }
+
+    /**
+     * Подготовить письмо
+     *
+     * @param Collection<User> $recipients
+     *
+     * @return PendingMail
+     */
+    protected function getPendingMail(Collection $recipients): PendingMail
+    {
+        return Mail::to(
+            users: $recipients->pluck('email')->all()
+        );
+    }
+
+    /**
+     * Отправка письма
+     *
+     * @param Collection<User> $recipients
+     * @param Mailable $mail
+     *
+     * @return SentMessage|null
+     */
+    protected function sendEmail(Collection $recipients, Mailable $mail): ?SentMessage
+    {
+        return $this->getPendingMail($recipients)->send($mail);
+    }
+
+    /**
+     * Выборка получателей с отправкой писем
+     *
+     * @param Collection $recipients
+     * @param Mailable $mail
+     *
+     * @return void
+     */
+    protected function sendMailToRecipients(Collection $recipients, Mailable $mail): void
+    {
+        $recipients->when(
+            value: $recipients->count(),
+            callback: fn () => $recipients->chunk(20)
+                ->each(
+                    fn (Collection $users) => $this->getPendingMail($recipients)
+                        ->send($mail))
+                );
     }
 }
