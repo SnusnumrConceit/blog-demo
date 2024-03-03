@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Site\Category;
 
-use \App\Enums\Post\PrivacyEnum as PostPrivacyEnum;
+use \App\Enums\PrivacyEnum;
 use App\Models\Category;
 use App\Models\Post;
 use App\Models\User;
@@ -166,7 +166,7 @@ it('can admin/active user view protected or public category with protected posts
     $posts = Post::factory()->count(15)->create();
     $category->posts()->sync($posts->pluck('id')->all());
 
-    $availablePosts = $posts->filter(fn (Post $post) => $post->privacy != PostPrivacyEnum::PRIVATE);
+    $availablePosts = $posts->filter(fn (Post $post) => $post->privacy != PrivacyEnum::PRIVATE->value);
 
     /** @var TestCase $this */
     $response = $this->actingAs($user)

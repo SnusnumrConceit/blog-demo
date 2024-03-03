@@ -2,12 +2,12 @@
 
 @section('content')
     @session('success'))
-        <div class="alert alert-success mb-4">
-            <h5 class="mb-0">
-                <i class="bi bi-check-circle"></i>
-                {{ session('success') }}
-            </h5>
-        </div>
+    <div class="alert alert-success mb-4">
+        <h5 class="mb-0">
+            <i class="bi bi-check-circle"></i>
+            {{ session('success') }}
+        </h5>
+    </div>
     @endsession
 
     <div class="card">
@@ -45,11 +45,11 @@
                             <i class="bi bi-eye text-success"></i>
                             <span>Публичная</span>
                             @break
-                        @case(\App\Enums\Category\PrivacyEnum::PROTECTED)
+                        @case(\App\Enums\PrivacyEnum::PROTECTED->value)
                             <i class="bi bi-eye-slash"></i>
                             <span>Скрыта от гостей</span>
                             @break
-                        @case(\App\Enums\Category\PrivacyEnum::PRIVATE)
+                        @case(\App\Enums\PrivacyEnum::PRIVATE->value)
                             <i class="bi bi-eye-slash-fill text-danger"></i>
                             <span>Скрыта от всех</span>
                             @break
@@ -58,7 +58,8 @@
             </div>
             <hr>
             <div class="d-flex">
-                <a class="btn btn-outline-primary" href="{{ route('admin.categories.edit', ['category' => $category]) }}">
+                <a class="btn btn-outline-primary"
+                   href="{{ route('admin.categories.edit', ['category' => $category]) }}">
                     <i class="bi bi-pen"></i>
                     <span class="d-md-inline d-none d-sm-none">
                         Редактировать

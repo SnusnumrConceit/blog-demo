@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Jobs\Admin;
 
-use App\Enums\Post\PrivacyEnum;
+use App\Enums\PrivacyEnum;
 use App\Jobs\Admin\Post\PublishPost;
 use App\Models\Post;
 use Illuminate\Support\Arr;

@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Admin\Category;
 
-use App\Enums\Category\PrivacyEnum;
+use App\Enums\PrivacyEnum;
 use App\Http\Requests\BaseRequest;
 use Illuminate\Validation\Rule;
 

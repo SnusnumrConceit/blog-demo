@@ -1,6 +1,6 @@
 <?php
 
-use App\Enums\Post\PrivacyEnum;
+use App\Enums\PrivacyEnum;
 use App\Jobs\Admin\Post\PublishPost;
 use App\Mail\Post\PostCreated;
 use App\Models\Category;

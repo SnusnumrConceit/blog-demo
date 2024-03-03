@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\Post\PrivacyEnum;
+use App\Enums\PrivacyEnum;
 use App\Enums\User\StatusEnum;
 use App\Events\Post\PostCreated;
 use App\Events\Post\PostDeleted;
@@ -51,7 +51,7 @@ class PostController extends Controller
     {
         $categories = auth()->user()->hasRole(StatusEnum::ADMIN)
             ? Category::all()
-            : Category::whereNull('privacy')->orWhere('privacy', PrivacyEnum::PROTECTED)->get();
+            : Category::whereNull('privacy')->orWhere('privacy', PrivacyEnum::PROTECTED->value)->get();
 
         return view(view: 'admin.posts.create', data: [
             'privacyItems' => [null, ...PrivacyEnum::getValues()],
@@ -105,13 +105,13 @@ class PostController extends Controller
                 ->whereNull('privacy')
                 ->when(
                     value: ! auth()->user()->isAdmin(),
-                    callback: fn () => $query->orWhere('privacy', PrivacyEnum::PROTECTED)
+                    callback: fn () => $query->orWhere('privacy', PrivacyEnum::PROTECTED->value)
                 )
         ]);
 
         $categories = auth()->user()->isAdmin()
             ? Category::all()
-            : Category::whereNull('privacy')->orWhere('privacy', PrivacyEnum::PROTECTED)->get();
+            : Category::whereNull('privacy')->orWhere('privacy', PrivacyEnum::PROTECTED->value)->get();
 
         return view(view: 'admin.posts.edit', data: [
             'privacyItems' => [null, ...PrivacyEnum::getValues()],

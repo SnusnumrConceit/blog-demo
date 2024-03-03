@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Admin\Category;
 
-use App\Enums\Category\PrivacyEnum;
+use App\Enums\PrivacyEnum;
 use App\Models\Category;
 use App\Models\User;
 use Illuminate\Auth\AuthenticationException;

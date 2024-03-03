@@ -67,11 +67,11 @@
                             <i class="bi bi-eye text-success"></i>
                             <span>Публичный</span>
                             @break
-                        @case(\App\Enums\Post\PrivacyEnum::PROTECTED)
+                        @case(\App\Enums\PrivacyEnum::PROTECTED->value)
                             <i class="bi bi-eye-slash"></i>
                             <span>Скрыт от гостей</span>
                             @break
-                        @case(\App\Enums\Post\PrivacyEnum::PRIVATE)
+                        @case(\App\Enums\PrivacyEnum::PRIVATE->value)
                             <i class="bi bi-eye-slash-fill text-danger"></i>
                             <span>Скрыт от всех</span>
                             @break

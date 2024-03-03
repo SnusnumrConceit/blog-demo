@@ -2,8 +2,7 @@
 
 namespace App\Http\Controllers\Site;
 
-use App\Enums\Category\PrivacyEnum;
-use App\Enums\Post\PrivacyEnum as PostPrivacyEnum;
+use App\Enums\PrivacyEnum;
 use App\Enums\User\StatusEnum;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
@@ -25,7 +24,7 @@ class CategoryController extends Controller
             ->whereNull('privacy')
             ->when(
                 value: auth()->user()?->hasRole(StatusEnum::ACTIVE),
-                callback: fn (Builder $query) => $query->orWhere('privacy', PrivacyEnum::PROTECTED)
+                callback: fn (Builder $query) => $query->orWhere('privacy', PrivacyEnum::PROTECTED->value)
             )
             ->paginate(15, ['slug', 'name', 'posts']);
 
@@ -51,7 +50,7 @@ class CategoryController extends Controller
                         ->whereNull('privacy')
                         ->when(
                             value: auth()->user()?->hasRole(StatusEnum::ACTIVE),
-                            callback: fn (Builder $query) => $query->orWhere('privacy', PostPrivacyEnum::PROTECTED)
+                            callback: fn (Builder $query) => $query->orWhere('privacy', PrivacyEnum::PROTECTED->value)
                         );
                 },
                 'posts.author:id,name',

@@ -47,9 +47,9 @@
                                 @switch($post->privacy)
                                     @case(null)
                                         <i class="bi bi-eye text-success"></i> @break
-                                    @case(\App\Enums\Post\PrivacyEnum::PROTECTED)
+                                    @case(\App\Enums\PrivacyEnum::PROTECTED->value)
                                         <i class="bi bi-eye-slash"></i> @break
-                                    @case(\App\Enums\Post\PrivacyEnum::PRIVATE)
+                                    @case(\App\Enums\PrivacyEnum::PRIVATE->value)
                                         <i class="bi bi-eye-slash-fill text-danger"></i>@break
                                 @endswitch
                             </td>

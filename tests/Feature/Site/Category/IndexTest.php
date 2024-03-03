@@ -1,6 +1,6 @@
 <?php
 
-use App\Enums\Category\PrivacyEnum;
+use App\Enums\PrivacyEnum;
 use App\Models\Category;
 use App\Models\User;
 use Database\Factories\UserFactory;
@@ -52,7 +52,7 @@ it('can guest index public categories', function () {
 it('can active/admin user index public and protected categories', function () {
     /** @var Category $categories */
     $categories = Category::factory()->count(20)->create();
-    $availableCategories = $categories->filter(fn (Category $category) => $category->privacy != PrivacyEnum::PRIVATE);
+    $availableCategories = $categories->filter(fn (Category $category) => $category->privacy != PrivacyEnum::PRIVATE->value);
 
     $user = User::factory()
         ->when(
